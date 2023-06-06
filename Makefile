@@ -1,12 +1,13 @@
 CC      = gcc
-TARGET  = editor
+TARGET  = text_editor
 C_FILES = $(filter-out $(TARGET).c, $(wildcard *.c))
 OBJS    = $(patsubst %.c,%.o,$(C_FILES))
-CFLAGS  = -g -Wall -Werror -pedantic-errors
-LDFLAGS =
+CFLAGS  = `pkg-config --cflags gtk4`
+LDFLAGS = `pkg-config --libs gtk4`
 
 .PHONY: all clean
-	all: $(TARGET)
+all: $(TARGET)
+
 $(TARGET): $(OBJS) $(TARGET).c
 	    $(CC) $(CFLAGS) $(OBJS) $(TARGET).c -o $(TARGET) $(LDFLAGS)
 %.o: %.c %.h
