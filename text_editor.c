@@ -21,7 +21,7 @@ static void activate(GtkApplication *app, gpointer user_data){
 	// Creating the window
 	window = gtk_application_window_new(app);
 	gtk_window_set_title(GTK_WINDOW(window), "GTK Editor");
- 	//gtk_window_set_default_size(GTK_WINDOW(window), 300, 300);
+ 	gtk_window_set_default_size(GTK_WINDOW(window), 300, 300);
 
   	//button = gtk_button_new_with_label("Hello World");
   	//g_signal_connect(button, "clicked", G_CALLBACK(print_hello), NULL);
@@ -42,15 +42,17 @@ static void activate(GtkApplication *app, gpointer user_data){
 	
 	// Text View & Buffer
 	view = gtk_text_view_new();
+	gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), 3);
+	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(view), 3);
 
 	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
-	gtk_text_buffer_set_text(buffer, "Hello, this is some text.", -1); // default text
+	//gtk_text_buffer_set_text(buffer, "Hello, this is some text.", -1); // default text
 	
 	// Iters created for debugging purposes
-	start_itr = gtk_text_buffer_get_start_iter(buffer, itr);
-	end_itr = gtk_text_buffer_get_end_iter(buffer, itr);
-	char* msg = gtk_text_buffer_get_text(buffer, start_itr, end_itr, false);
-	printf(msg);
+	//start_itr = gtk_text_buffer_get_start_iter(buffer, itr);
+	//end_itr = gtk_text_buffer_get_end_iter(buffer, itr);
+	//char* msg = gtk_text_buffer_get_text(buffer, start_itr, end_itr, false);
+	//printf(msg);
 	
 	// Setting the Text View as a child of window
 	gtk_window_set_child(GTK_WINDOW(window), view);
