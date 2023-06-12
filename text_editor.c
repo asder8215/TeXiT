@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
-
+#include <sys/wait.h>
 /**
 static void print_hello(GtkWidget *widget, gpointer data){
 	//g_print ("Hello World\n");
@@ -8,9 +8,21 @@ static void print_hello(GtkWidget *widget, gpointer data){
 }
 **/
 
+
 typedef GtkWidget* Widget;
 typedef GtkTextBuffer* Buffer;
 typedef GtkTextIter* Iter;
+
+static void chooseFile(GtkWidget* widget, gpointer data){
+	Widget view = (Widget) data;
+	pid_t pid;
+	if((pid = fork()) == 0){
+		system("xdg-open /");
+	}
+	else{
+		waitpid(pid, NULL, 0);
+	}
+}
 
 static void activate(GtkApplication *app, gpointer user_data){
 	// Declaring all variables
@@ -22,6 +34,13 @@ static void activate(GtkApplication *app, gpointer user_data){
 	window = gtk_application_window_new(app);
 	gtk_window_set_title(GTK_WINDOW(window), "GTK Editor");
  	gtk_window_set_default_size(GTK_WINDOW(window), 300, 300);
+	
+	// Text View & Buffer
+	view = gtk_text_view_new();
+	gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), 3);
+	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(view), 3);
+
+	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
 
   	//button = gtk_button_new_with_label("Hello World");
   	//g_signal_connect(button, "clicked", G_CALLBACK(print_hello), NULL);
@@ -35,17 +54,13 @@ static void activate(GtkApplication *app, gpointer user_data){
   	file_btn = gtk_button_new_with_label("");	
   	gtk_button_set_child(GTK_BUTTON(file_btn), gtk_image_new_from_icon_name("folder")); 
   	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_btn); 
-	
+	g_signal_connect(file_btn, "clicked", G_CALLBACK(chooseFile), view); 	
+		
 	// Server sharing button
 	server_toggle = gtk_toggle_button_new_with_label(""); 
   	gtk_button_set_child(GTK_BUTTON(server_toggle), gtk_image_new_from_icon_name("mail-replied")); 	      gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), server_toggle); 
 	
-	// Text View & Buffer
-	view = gtk_text_view_new();
-	gtk_text_view_set_top_margin(GTK_TEXT_VIEW(view), 3);
-	gtk_text_view_set_left_margin(GTK_TEXT_VIEW(view), 3);
-
-	buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
+	
 	//gtk_text_buffer_set_text(buffer, "Hello, this is some text.", -1); // default text
 	
 	// Iters created for debugging purposes
