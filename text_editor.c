@@ -8,27 +8,44 @@ static void print_hello(GtkWidget *widget, gpointer data){
 }
 **/
 
-
 typedef GtkWidget* Widget;
 typedef GtkTextBuffer* Buffer;
 typedef GtkTextIter* Iter;
+typedef GtkFileChooserAction FileAction;
 
-static void chooseFile(GtkWidget* widget, gpointer data){
-	Widget view = (Widget) data;
-	pid_t pid;
-	if((pid = fork()) == 0){
-		system("xdg-open /");
+static void filePick(GtkDialog* dialog, int response){
+	if(response == GTK_RESPONSE_ACCEPT){
+		GtkFileChooser* chooser= GTK_FILE_CHOOSER(dialog);
+		GFile* file = gtk_file_chooser_get_file(chooser);
+		//open_file(file);
 	}
-	else{
-		waitpid(pid, NULL, 0);
-	}
+	gtk_window_destroy(GTK_WINDOW(dialog));
 }
+
+
+static void fileDialog(GtkWidget* file_btn, gpointer window){
+	Widget dialog;
+	dialog = gtk_file_chooser_dialog_new("Choose a file",
+					    GTK_WINDOW(window),
+					    GTK_FILE_CHOOSER_ACTION_OPEN,
+					    "Cancel",
+					    GTK_RESPONSE_CANCEL,
+					    "Open",
+					    GTK_RESPONSE_ACCEPT,
+					    NULL);
+
+	//gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(window));
+	gtk_window_present(GTK_WINDOW(dialog));
+	g_signal_connect(dialog, "response", G_CALLBACK(filePick), NULL);
+}
+
 
 static void activate(GtkApplication *app, gpointer user_data){
 	// Declaring all variables
 	Widget window, headerbar, file_btn, server_toggle, view;
 	Buffer buffer;
-	Iter itr, start_itr, end_itr;
+	//Iter itr, start_itr, end_itr;
+
 	
 	// Creating the window
 	window = gtk_application_window_new(app);
@@ -50,15 +67,18 @@ static void activate(GtkApplication *app, gpointer user_data){
   	headerbar = gtk_header_bar_new();
   	gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 	
-	// File button 
-  	file_btn = gtk_button_new_with_label("");	
+	// File button & Dialog action 
+  	file_btn = gtk_button_new_with_label("");
+	//dialog = 
   	gtk_button_set_child(GTK_BUTTON(file_btn), gtk_image_new_from_icon_name("folder")); 
   	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_btn); 
-	g_signal_connect(file_btn, "clicked", G_CALLBACK(chooseFile), view); 	
+	g_signal_connect(file_btn, "clicked", G_CALLBACK(fileDialog), view); 	
 		
 	// Server sharing button
 	server_toggle = gtk_toggle_button_new_with_label(""); 
-  	gtk_button_set_child(GTK_BUTTON(server_toggle), gtk_image_new_from_icon_name("mail-replied")); 	      gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), server_toggle); 
+  	gtk_button_set_child(GTK_BUTTON(server_toggle), 
+			     gtk_image_new_from_icon_name("mail-replied")); 	      
+	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), server_toggle); 
 	
 	
 	//gtk_text_buffer_set_text(buffer, "Hello, this is some text.", -1); // default text
