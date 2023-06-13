@@ -7,18 +7,19 @@ typedef GtkTextBuffer* Buffer;
 typedef GtkTextIter* Iter;
 typedef GtkFileChooserAction FileAction;
 
-static void filePick(GtkDialog* dialog, int response){
+static void filePick(GtkNativeDialog* dialog, int response){
 	// Fetch the parent window that the File dialog is connected to
-	GtkWindow* window = gtk_window_get_transient_for(GTK_WINDOW(dialog));
-	GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
-				gtk_window_get_child(window)));
-	// GList* children = NULL;
-	// GtkWidget* view = NULL;
-	/*
-	if(GTK_IS_CONTAINER(window)){
-		children = gtk_container_get_children(GTK_CONTAINER(window));
-	}
-	*/
+	//GtkWindow* window = gtk_window_get_transient_for(GTK_WINDOW(dialog));
+	//GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+	//			gtk_window_get_child(window)));
+	
+	GtkWindow* window = gtk_native_dialog_get_transient_for(dialog);
+	GtkTextBuffer* buffer = gtk_text_view_get_buffer(
+			GTK_TEXT_VIEW(
+				gtk_window_get_child(window)
+				)
+			);
+	
 	if(response == GTK_RESPONSE_ACCEPT){
 		// Choosing a file and loading contents into Window's TextView
 		GtkFileChooser* chooser= GTK_FILE_CHOOSER(dialog);
@@ -37,21 +38,31 @@ static void filePick(GtkDialog* dialog, int response){
 }
 
 static void fileDialog(GtkWidget* file_btn, gpointer window){
-	Widget dialog;
-	dialog = gtk_file_chooser_dialog_new("Choose a file",
+	GtkFileChooserNative* dialog;
+	/*
+	 dialog = gtk_file_chooser_dialog_new("Choose a file",
 					    GTK_WINDOW(window),
 					    GTK_FILE_CHOOSER_ACTION_OPEN,
-					    "Cancel",
-					    GTK_RESPONSE_CANCEL,
 					    "Open",
-					    GTK_RESPONSE_ACCEPT,
-					    NULL);
-	gtk_window_set_modal(GTK_WINDOW(dialog), true);
-	gtk_window_set_transient_for(GTK_WINDOW(dialog),
-					    GTK_WINDOW(window));
+					    "Cancel");
+	*/
+
+	dialog = gtk_file_chooser_native_new("Open File", 
+					      window, 
+					      GTK_FILE_CHOOSER_ACTION_OPEN, 
+					      "Open", 
+					      "Cancel");
+	//gtk_window_set_modal(GTK_WINDOW(dialog), true);
+	//gtk_window_set_transient_for(GTK_WINDOW(dialog),
+	//				    GTK_WINDOW(window));
 	
-	gtk_window_present(GTK_WINDOW(dialog));
+	//gtk_window_present(GTK_WINDOW(dialog));
+	//g_signal_connect(dialog, "response", G_CALLBACK(filePick), NULL);
+
+	gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(dialog), true);
+	gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(dialog), GTK_WINDOW(window));
 	g_signal_connect(dialog, "response", G_CALLBACK(filePick), NULL);
+	gtk_native_dialog_show(GTK_NATIVE_DIALOG(dialog));
 }
 
 
