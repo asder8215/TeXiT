@@ -1,20 +1,52 @@
 #include "gui.h"
 #include <stdio.h>
 
+#define SHARE_RESPONSE_HOST 1
+#define SHARE_RESPONSE_CONNNECT 2
+
 static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
 typedef GtkWidget* Widget;
 
-/// Handler for activating/deactivating the share feature. TODO: The *window* is the window to which the GtkDialog will be added to.
+static void share_toggle_click(GtkToggleButton* toggle, gpointer window);
+static void share_enable_response(GtkDialog* dialog, int response);
+static void open_file_click(GtkButton* button, gpointer window);
+static void open_file_response(GtkNativeDialog* dialog, int response);
+
+/// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, gpointer window) {
     const char* label;
     if (gtk_toggle_button_get_active(toggle)) {
         // TODO: open dialog to configure
-        label = SERVER_TOGGLE_ON_TITLE;
+        GtkDialog* dialog = gtk_dialog_new_with_buttons("Start Sharing", GTK_WINDOW(window),
+                                GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                                "Host", SHARE_RESPONSE_HOST,
+                                "Connect", SHARE_RESPONSE_HOST, NULL
+                            );
+        share_dialog(gtk_dialog_get_content_area(dialog));
+        gtk_window_set_resizable(GTK_WINDOW(dialog), false);
+        g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), NULL);
+        gtk_widget_show(dialog);
+        // TODO: deactivate toggle button. `share_enable_response()` should activate the toggle button.
     } else {
         label = SERVER_TOGGLE_OFF_TITLE;
+        gtk_button_set_label(GTK_BUTTON(toggle), label);
     }
-    gtk_button_set_label(GTK_BUTTON(toggle), label);
+}
+
+/// Set up sharing connection (either hosting or connecting).
+static void share_enable_response(GtkDialog* dialog, int response) {
+    
+}
+
+static void open_file_click(GtkButton* button, gpointer window) {
+    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
+        window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
+    );
+    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
+    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), GTK_WINDOW(window));
+    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), NULL);
+    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 }
 
 static void open_file_response(GtkNativeDialog* dialog, int response) {
@@ -48,15 +80,6 @@ static void open_file_response(GtkNativeDialog* dialog, int response) {
     g_object_unref(dialog);
 }
 
-static void open_file_click(GtkButton* button, gpointer window) {
-    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
-        window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
-    );
-    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
-    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), GTK_WINDOW(window));
-    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), NULL);
-    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
-}
 
 void main_window(GtkApplication *app, gpointer user_data) {
     Widget window,
@@ -103,6 +126,15 @@ void main_window(GtkApplication *app, gpointer user_data) {
     gtk_window_set_child(GTK_WINDOW(window), window_box);
 
     gtk_window_present(GTK_WINDOW(window));
+}
+
+/// Creates the UI for the dialog that allows user to activate sharing.
+void share_dialog(GtkBox* dialog_content_area) {
+    gtk_box_append(dialog_content_area, gtk_label_new("Host session"));
+    gtk_box_append(dialog_content_area, gtk_entry_new());
+    gtk_box_append(dialog_content_area, gtk_label_new("Or:"));
+    gtk_box_append(dialog_content_area, gtk_label_new("Connect to an exisitng session"));
+    gtk_box_append(dialog_content_area, gtk_entry_new());
 }
 
 GtkWidget* get_widget_by_name(GtkWidget* parent, const char* name) {
