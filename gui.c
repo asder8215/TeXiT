@@ -5,6 +5,14 @@ static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
 typedef GtkWidget* Widget;
 
+
+
+// Global variable for file name (will be changed later)
+//GFile* file_name = NULL;
+
+//int newFile = 1;
+//char* filePath = NULL;
+
 /// Handler for activating/deactivating the share feature. TODO: The *window* is the window to which the GtkDialog will be added to.
 static void share_toggle_click(GtkToggleButton* toggle, gpointer window) {
     const char* label;
@@ -30,8 +38,9 @@ static void open_file_response(GtkNativeDialog* dialog, int response) {
 
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
-        printf("Open File: %s\n", g_file_get_path(file));
-
+        //file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
+		//filePath = g_file_get_path(file);
+		printf("Open File: %s\n", g_file_get_path(file));
         char* content;
         gsize length;
         GError* error;
@@ -48,13 +57,62 @@ static void open_file_response(GtkNativeDialog* dialog, int response) {
     g_object_unref(dialog);
 }
 
-static void open_file_click(GtkButton* button, gpointer window) {
-    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
+static void open_file_click(GtkButton* button, gpointer window) {	
+	GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
         window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
     );
+
     gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
     gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), GTK_WINDOW(window));
     g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), NULL);
+    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
+}
+
+
+static void save_file_response(GtkNativeDialog* dialog, int response){
+    GtkWindow* window = gtk_native_dialog_get_transient_for(dialog);
+    // TODO: implement `get_widget_by_name("main-text-view")` and remove hardcoded solution.
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+                                gtk_widget_get_first_child( // text_view
+                                    gtk_widget_get_first_child( // scroller
+                                        gtk_window_get_child(window) // window_box
+                                    )
+                                )
+                            ));
+
+	if(response == GTK_RESPONSE_ACCEPT){
+        GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
+		//filePath = g_file_get_path(file);
+		GtkTextIter start, end;
+		gtk_text_buffer_get_bounds(buffer, &start, &end);
+		char* content = gtk_text_buffer_get_text(buffer, &start, &end, false);
+		gsize length = gtk_text_buffer_get_char_count(buffer);
+		if(g_file_replace_contents(file, content, length, NULL, false, G_FILE_CREATE_PRIVATE,
+								   NULL, NULL, NULL) == false){
+			exit(0);
+		}
+		//newFile = 0;
+		g_object_unref(file);
+	}
+	g_object_unref(dialog);
+}
+
+static void save_file_click(GtkButton* button, gpointer window){
+	GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Save File",
+        window, GTK_FILE_CHOOSER_ACTION_SAVE, "Save", "Cancel"
+    );
+	GtkFileChooser* chooser = GTK_FILE_CHOOSER(file_chooser);	
+	
+	//if(newFile){
+		gtk_file_chooser_set_current_name(chooser, "Untitled document.txt");
+	//}
+	//else{
+	//	gtk_file_chooser_set_file(chooser, filePath, NULL);
+	//}
+
+    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
+    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), GTK_WINDOW(window));
+    g_signal_connect(file_chooser, "response", G_CALLBACK(save_file_response), NULL);
     gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 }
 
@@ -62,6 +120,7 @@ void main_window(GtkApplication *app, gpointer user_data) {
     Widget window,
         headerbar,
             file_open,
+			file_save,
             // folder_open,
             share_toggle,
         window_box,
@@ -76,9 +135,15 @@ void main_window(GtkApplication *app, gpointer user_data) {
 
     file_open = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(file_open), gtk_image_new_from_icon_name("text-x-generic-symbolic"));
-    g_signal_connect(file_open, "clicked", G_CALLBACK(open_file_click), window);
+	g_signal_connect(file_open, "clicked", G_CALLBACK(open_file_click), window);
     gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_open);
-    // folder_open = gtk_button_new();
+    
+	file_save = gtk_button_new();
+	gtk_button_set_child(GTK_BUTTON(file_save), gtk_image_new_from_icon_name("edit-find-replace-symbolic"));
+	g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), window);
+	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_save);	
+
+	// folder_open = gtk_button_new();
     // gtk_button_set_child(GTK_BUTTON(folder_open), gtk_image_new_from_icon_name("folder-symbolic"));
     // g_signal_connect(folder_open, "clicked", G_CALLBACK(open_folder_click), window);
     // gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), folder_open);
