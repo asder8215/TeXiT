@@ -8,8 +8,8 @@ typedef GtkWidget* Widget;
 // Global variable for file name (will be changed later)
 //GFile* file_name = NULL;
 
-//int newFile = 1;
-//char* filePath = NULL;
+int newFile = 1;
+char* filePath = NULL;
 
 /// Handler for activating/deactivating the share feature. TODO: The *window* is the window to which the GtkDialog will be added to.
 static void share_toggle_click(GtkToggleButton* toggle, gpointer window) {
@@ -37,7 +37,8 @@ static void open_file_response(GtkNativeDialog* dialog, int response) {
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         //file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
-		//filePath = g_file_get_path(file);
+		filePath = g_file_get_path(file);
+		newFile = 0;
 		printf("Open File: %s\n", g_file_get_path(file));
         char* content;
         gsize length;
@@ -80,33 +81,55 @@ static void save_file_response(GtkNativeDialog* dialog, int response){
 
 	if(response == GTK_RESPONSE_ACCEPT){
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
-		//filePath = g_file_get_path(file);
+		filePath = g_file_get_path(file);
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(buffer, &start, &end);
 		char* content = gtk_text_buffer_get_text(buffer, &start, &end, false);
 		gsize length = gtk_text_buffer_get_char_count(buffer);
-		if(g_file_replace_contents(file, content, length, NULL, false, G_FILE_CREATE_PRIVATE,
-								   NULL, NULL, NULL) == false){
+		if(g_file_replace_contents(file, content, length, 
+		   NULL, false, G_FILE_CREATE_PRIVATE, NULL, NULL, NULL) == false){
+			g_object_unref(file);
 			exit(0);
 		}
-		//newFile = 0;
 		g_object_unref(file);
 	}
 	g_object_unref(dialog);
 }
 
 static void save_file_click(GtkButton* button, gpointer window){
-	GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Save File",
-        window, GTK_FILE_CHOOSER_ACTION_SAVE, "Save", "Cancel"
-    );
+	GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Save File", window, GTK_FILE_CHOOSER_ACTION_SAVE, 
+																	 "Save", "Cancel");
 	GtkFileChooser* chooser = GTK_FILE_CHOOSER(file_chooser);	
 	
-	//if(newFile){
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+                                gtk_widget_get_first_child( // text_view
+                                    gtk_widget_get_first_child( // scroller
+                                        gtk_window_get_child(window) // window_box
+                                    )
+                                )
+                            ));
+	
+	if(newFile){
 		gtk_file_chooser_set_current_name(chooser, "Untitled document.txt");
-	//}
-	//else{
-	//	gtk_file_chooser_set_file(chooser, filePath, NULL);
-	//}
+	}
+	// If we're in an existing file, no need to bring up the save file dialog, just save the file.
+	else{
+		GFile* currFile = g_file_new_for_path((const char*) filePath);		
+		
+		GtkTextIter start, end;
+		gtk_text_buffer_get_bounds(buffer, &start, &end);
+		char* content = gtk_text_buffer_get_text(buffer, &start, 
+												&end, false);
+		gsize length = gtk_text_buffer_get_char_count(buffer);
+		if(g_file_replace_contents(currFile, content, length, 
+		   NULL, false, G_FILE_CREATE_PRIVATE, NULL, NULL, NULL) == false){
+			g_object_unref(currFile);
+			exit(0);
+		}
+		g_object_unref(currFile);
+		return ;
+		//gtk_file_chooser_set_file(chooser, currFile, NULL);
+	}
 
     gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
     gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), GTK_WINDOW(window));
