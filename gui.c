@@ -5,8 +5,6 @@ static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
 typedef GtkWidget* Widget;
 
-
-
 // Global variable for file name (will be changed later)
 //GFile* file_name = NULL;
 
