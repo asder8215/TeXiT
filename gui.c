@@ -82,6 +82,7 @@ static void save_file_response(GtkNativeDialog* dialog, int response){
 	if(response == GTK_RESPONSE_ACCEPT){
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
 		filePath = g_file_get_path(file);
+		newFile = 0;
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(buffer, &start, &end);
 		char* content = gtk_text_buffer_get_text(buffer, &start, &end, false);
