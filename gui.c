@@ -7,13 +7,12 @@
 
 static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
-typedef GtkWidget* Widget;
 
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, gpointer window) {
     const char* label;
     if (gtk_toggle_button_get_active(toggle)) {
-        // TODO: open dialog to configure
+        // Freed by `share_enable_response()`.
         GtkDialog* dialog = GTK_DIALOG(gtk_dialog_new_with_buttons("Start Sharing", GTK_WINDOW(window),
                                 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
                                 "Host", SHARE_RESPONSE_HOST,
@@ -21,6 +20,7 @@ static void share_toggle_click(GtkToggleButton* toggle, gpointer window) {
                             ));
         ShareDialogEntries entries = share_dialog(GTK_BOX(gtk_dialog_get_content_area(dialog)));
         // C moment :( Why must it be done like this
+        // Freed by `share_enable_response()`.
         ShareEnableParams* params = malloc(sizeof(ShareEnableParams));
         params->toggle = GTK_BUTTON(toggle);
         params->entries = entries;
@@ -77,18 +77,22 @@ static void open_file_response(GtkNativeDialog* dialog, int response) {
 
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
-        printf("Open File: %s\n", g_file_get_path(file));
+        const char* path = g_file_get_path(file);
+        printf("Open File: %s\n", path);
 
         char* content;
         gsize length;
         GError* error;
         if (!g_file_load_contents(file, NULL, &content, &length, NULL, &error)) {
-            // TODO: Print error
+            printf("Error opening file \"%s\": %s\n", path, error->message);
+            free(error);
             exit(0);
         }
 
         gtk_text_buffer_set_text(buffer, (const char*)content, -1);
         g_object_unref(file);
+        g_free((void*)path);
+        free(content);
     }
 
     g_object_unref(dialog);

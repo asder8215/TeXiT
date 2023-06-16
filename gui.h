@@ -3,6 +3,8 @@
 
 #include <gtk/gtk.h>
 
+typedef GtkWidget* Widget;
+
 typedef struct {
     GtkEntry* host_port;
     GtkEntry* connect_ip;
