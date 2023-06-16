@@ -179,7 +179,3 @@ ShareDialogEntries share_dialog(GtkBox* dialog_content_area) {
     return r;
 }
 
-GtkWidget* get_widget_by_name(GtkWidget* parent, const char* name) {
-    printf("Not implemented, using hardcoded solution.\n");
-    exit(0);
-}
