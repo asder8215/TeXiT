@@ -2,6 +2,7 @@
 #define __GUI_H__
 
 #include <gtk/gtk.h>
+#include "gui_utils.h"
 
 typedef GtkWidget* Widget;
 

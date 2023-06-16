@@ -65,17 +65,11 @@ static void open_file_click(GtkButton* button, gpointer window) {
 }
 
 static void open_file_response(GtkNativeDialog* dialog, int response) {
-    GtkWindow* window = gtk_native_dialog_get_transient_for(dialog);
+    GtkWindow* dialog_window = gtk_native_dialog_get_transient_for(dialog);
     // TODO: implement `get_widget_by_name("main-text-view")` and remove hardcoded solution.
-    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
-                                gtk_widget_get_first_child( // text_view
-                                    gtk_widget_get_first_child( // scroller
-                                        gtk_window_get_child(window) // window_box
-                                    )
-                                )
-                            ));
+    GtkTextBuffer* buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(get_widget_by_name(GTK_WIDGET(dialog_window), "main-text-view")));
 
-    if (response == GTK_RESPONSE_ACCEPT) {
+    if (buffer != NULL && response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         const char* path = g_file_get_path(file);
         printf("Open File: %s\n", path);
