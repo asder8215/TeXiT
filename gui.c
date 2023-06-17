@@ -189,11 +189,13 @@ void main_window(GtkApplication *app) {
 
     file_open = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(file_open), gtk_image_new_from_icon_name("text-x-generic-symbolic"));
+    gtk_widget_set_tooltip_text(file_open, "Open File");
 	g_signal_connect(file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
     gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_open);
     
 	file_save = gtk_button_new();
 	gtk_button_set_child(GTK_BUTTON(file_save), gtk_image_new_from_icon_name("document-save-symbolic"));
+    gtk_widget_set_tooltip_text(file_save, "Save File");
 	g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
 	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_save);
 
