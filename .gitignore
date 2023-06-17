@@ -1,3 +1,4 @@
 *.o
 editor
 text_editor
+.cache

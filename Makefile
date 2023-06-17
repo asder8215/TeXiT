@@ -1,6 +1,7 @@
 NAME = editor
 CC = gcc
 C_FILES = $(wildcard *.c)
+# TODO: do not output .o files
 OBJS = $(patsubst %.c, %.o, $(C_FILES))
 INCLUDE = -Iinclude/ # You should add your include directory here.
 CFLAGS = -g3 `pkg-config --cflags gtk4`
