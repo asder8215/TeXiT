@@ -58,8 +58,9 @@ static void share_enable_response(GtkDialog* dialog, int response, ShareEnablePa
 }
 
 
-static void new_file_click(GtkButton* button, FileClickParams* params){
-	printf("New File is Clicked\n");
+static void new_file_click(GtkButton* button, FileClickParams* params) {
+    printf("New File\n");
+    new_tab_page(params->tab_view);
 }
 
 
@@ -69,15 +70,16 @@ static void open_file_click(GtkButton* button, FileClickParams* params) {
     );
     gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
     gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params->buffer);
+    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params->tab_view);
     gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 }
 
-static void open_file_response(GtkNativeDialog* dialog, int response, GtkTextBuffer* buffer) {
+static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view) {
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         filePath = g_file_get_path(file);
         printf("Open File: %s\n", filePath);
+        GtkTextBuffer* buffer = new_tab_page(tab_view);
 
         char* content;
         gsize length;
@@ -97,16 +99,18 @@ static void open_file_response(GtkNativeDialog* dialog, int response, GtkTextBuf
 }
 
 static void save_file_click(GtkButton* button, FileClickParams* params) {
+    GtkTextBuffer* buffer = get_active_page_buffer(params->tab_view);
+    
 	// If in existing file, just overwrite file with content on TextView
 	// (No need for save dialog pop up)	
 	if (filePath != NULL) {
 		GFile* currFile = g_file_new_for_path((const char*) filePath);		
 		GtkTextIter start, end;
-		gtk_text_buffer_get_bounds(params->buffer, &start, &end);
-		char* content = gtk_text_buffer_get_text(params->buffer, &start, 
+		gtk_text_buffer_get_bounds(buffer, &start, &end);
+		char* content = gtk_text_buffer_get_text(buffer, &start, 
 												&end, false);
 		GError* error = NULL;
-		gsize length = gtk_text_buffer_get_char_count(params->buffer);
+		gsize length = gtk_text_buffer_get_char_count(buffer);
 		
 		if(g_file_replace_contents(currFile, content, length, 
 		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error) == false){
@@ -127,7 +131,7 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
     	
 		gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
    	    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    	g_signal_connect(file_chooser, "response", G_CALLBACK(save_file_response), params->buffer);
+    	g_signal_connect(file_chooser, "response", G_CALLBACK(save_file_response), buffer);
     	gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 	}
 }
@@ -162,6 +166,27 @@ static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuf
 	g_object_unref(dialog);
 }
 
+static GtkTextBuffer* new_tab_page(AdwTabView* tab_view) {
+    Widget scroller = gtk_scrolled_window_new(),
+        text_view = gtk_text_view_new();
+    
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
+    gtk_widget_set_vexpand(scroller, true);
+    gtk_widget_set_size_request(scroller, 400, 200);
+
+    adw_tab_view_append(tab_view, scroller);
+    return gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+}
+static GtkTextBuffer* get_active_page_buffer(AdwTabView* tab_view) {
+    return gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+        gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
+            adw_tab_page_get_child(
+                adw_tab_view_get_selected_page(tab_view)
+            )
+        ))
+    ));
+}
+
 void main_window(GtkApplication *app) {
     Widget window,
         window_box,
@@ -172,9 +197,9 @@ void main_window(GtkApplication *app) {
                 // folder_open,
                 share_toggle,
             tabbar,
-            tabview,
-                scroller,
-                    text_view,
+            tab_view,
+                // scroller,
+                //     text_view,
             action_bar;
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
@@ -184,14 +209,12 @@ void main_window(GtkApplication *app) {
     gtk_window_set_title(GTK_WINDOW(window), "Window");
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
 
-    text_view = gtk_text_view_new();
-    scroller = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
-    gtk_widget_set_vexpand(scroller, true);
-    gtk_widget_set_size_request(scroller, 400, 200);
+    tab_view = GTK_WIDGET(adw_tab_view_new());
+    tabbar = GTK_WIDGET(adw_tab_bar_new());
+    adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
 
     file_click_params->window = GTK_WINDOW(window);
-    file_click_params->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    file_click_params->tab_view = ADW_TAB_VIEW(tab_view);
 	
     headerbar = gtk_header_bar_new();
 
@@ -221,19 +244,13 @@ void main_window(GtkApplication *app) {
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(headerbar), share_toggle);
 
-    tabview = GTK_WIDGET(adw_tab_view_new());
-    tabbar = GTK_WIDGET(adw_tab_bar_new());
-    adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tabview));
-    // Program always starts with one empty file.
-    adw_tab_view_append(ADW_TAB_VIEW(tabview), scroller);
-
     action_bar = gtk_action_bar_new();
     gtk_widget_set_vexpand(action_bar, false);
     gtk_action_bar_pack_start(GTK_ACTION_BAR(action_bar), gtk_label_new("Share: Not connected"));
 
     window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_append(GTK_BOX(window_box), headerbar);
-    gtk_box_append(GTK_BOX(window_box), tabview);
+    gtk_box_append(GTK_BOX(window_box), tab_view);
     gtk_box_append(GTK_BOX(window_box), action_bar);
     adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), window_box);
 

@@ -21,8 +21,8 @@ typedef struct {
 typedef struct {
     /// Reference to the main-window so it can attach to it as modal.
     GtkWindow* window;
-    /// Reference to the main-text-buffer for text-editing.
-    GtkTextBuffer* buffer;
+    // Reference to the tabview to create a new tab with the file content.
+    AdwTabView* tab_view;
 } FileClickParams;
 
 /// Things that were heap-allocated in `main_window()` and must be freed when program terminates.
@@ -36,10 +36,15 @@ static void share_enable_response(GtkDialog* dialog, int response, ShareEnablePa
 /// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
 /// That same ptr should be freed only when the program terminates.
 static void open_file_click(GtkButton* button, FileClickParams* params);
-static void open_file_response(GtkNativeDialog* dialog, int response, GtkTextBuffer* buffer);
+static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view);
 /// Refer to `open_file_click()` about *params*.
 static void save_file_click(GtkButton* button, FileClickParams* params);
 static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuffer* buffer);
+
+/// Appends a new page with a TextView to the TabView.
+/// Returns the TextBuffer of the newly created TextView
+static GtkTextBuffer* new_tab_page(AdwTabView* tab_view);
+static GtkTextBuffer* get_active_page_buffer(AdwTabView* tab_view);
 
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);
