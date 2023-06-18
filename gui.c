@@ -57,6 +57,12 @@ static void share_enable_response(GtkDialog* dialog, int response, ShareEnablePa
     free(params);
 }
 
+
+static void new_file_click(GtkButton* button, FileClickParams* params){
+	printf("New File is Clicked\n");
+}
+
+
 static void open_file_click(GtkButton* button, FileClickParams* params) {
     GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
         params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
@@ -160,6 +166,7 @@ void main_window(GtkApplication *app) {
     Widget window,
         window_box,
             headerbar,
+                file_new,
                 file_open,
                 file_save,
                 // folder_open,
@@ -185,8 +192,14 @@ void main_window(GtkApplication *app) {
 
     file_click_params->window = GTK_WINDOW(window);
     file_click_params->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-
+	
     headerbar = gtk_header_bar_new();
+
+	file_new = gtk_button_new();
+	gtk_button_set_child(GTK_BUTTON(file_new), gtk_image_new_from_icon_name("document-new-symbolic"));
+	gtk_widget_set_tooltip_text(file_new, "New File");
+	g_signal_connect(file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
+	gtk_header_bar_pack_start(GTK_HEADER_BAR(headerbar), file_new);
 
     file_open = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(file_open), gtk_image_new_from_icon_name("text-x-generic-symbolic"));
