@@ -4,8 +4,8 @@ C_FILES = $(wildcard *.c)
 # TODO: do not output .o files
 OBJS = $(patsubst %.c, %.o, $(C_FILES))
 INCLUDE = -Iinclude/ # You should add your include directory here.
-CFLAGS = -g3 `pkg-config --cflags gtk4`
-LFLAGS = `pkg-config --libs gtk4`
+CFLAGS = -g3 `pkg-config --cflags gtk4` `pkg-config --cflags libadwaita-1`
+LFLAGS = `pkg-config --libs gtk4` `pkg-config --libs libadwaita-1`
 
 all: $(NAME)
 

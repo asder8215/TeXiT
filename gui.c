@@ -158,27 +158,26 @@ static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuf
 
 void main_window(GtkApplication *app) {
     Widget window,
-        headerbar,
-            file_open,
-			file_save,
-            // folder_open,
-            share_toggle,
         window_box,
-            scroller,
-                text_view, // main-text-view
+            headerbar,
+                file_open,
+                file_save,
+                // folder_open,
+                share_toggle,
+            tabbar,
+            tabview,
+                scroller,
+                    text_view,
             action_bar;
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;
 	
-    window = gtk_application_window_new(app);
+    window = adw_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Window");
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
-    headerbar = gtk_header_bar_new();
-    gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 
     text_view = gtk_text_view_new();
-    gtk_widget_set_name(text_view, "main-text-view");
     scroller = gtk_scrolled_window_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
     gtk_widget_set_vexpand(scroller, true);
@@ -186,6 +185,8 @@ void main_window(GtkApplication *app) {
 
     file_click_params->window = GTK_WINDOW(window);
     file_click_params->buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+
+    headerbar = gtk_header_bar_new();
 
     file_open = gtk_button_new();
     gtk_button_set_child(GTK_BUTTON(file_open), gtk_image_new_from_icon_name("text-x-generic-symbolic"));
@@ -207,14 +208,21 @@ void main_window(GtkApplication *app) {
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(headerbar), share_toggle);
 
+    tabview = GTK_WIDGET(adw_tab_view_new());
+    tabbar = GTK_WIDGET(adw_tab_bar_new());
+    adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tabview));
+    // Program always starts with one empty file.
+    adw_tab_view_append(ADW_TAB_VIEW(tabview), scroller);
+
     action_bar = gtk_action_bar_new();
     gtk_widget_set_vexpand(action_bar, false);
     gtk_action_bar_pack_start(GTK_ACTION_BAR(action_bar), gtk_label_new("Share: Not connected"));
 
     window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_append(GTK_BOX(window_box), scroller);
+    gtk_box_append(GTK_BOX(window_box), headerbar);
+    gtk_box_append(GTK_BOX(window_box), tabview);
     gtk_box_append(GTK_BOX(window_box), action_bar);
-    gtk_window_set_child(GTK_WINDOW(window), window_box);
+    adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), window_box);
 
     gtk_window_present(GTK_WINDOW(window));
 }
