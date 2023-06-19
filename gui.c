@@ -164,16 +164,19 @@ static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuf
 
 void main_window(GtkApplication *app) {
     Widget window,
-        headerbar,
-			file_new,
-            file_open,
-			file_save,
-            // folder_open,
-            share_toggle,
-        window_box,
-            scroller,
-                text_view, // main-text-view
+		window_box,
+        	headerbar,
+				file_new,
+            	file_open,
+				file_save,
+            	// folder_open,
+            	share_toggle,
+        	tabbar,
+			tab_view,
+            	scroller,
+                	text_view, // main-text-view
             action_bar;
+
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;
@@ -181,7 +184,12 @@ void main_window(GtkApplication *app) {
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Window");
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
-    headerbar = gtk_header_bar_new();
+    
+	tab_view = GTK_WIDGET(adw_tab_view_new());
+	tabbar = GTK_WIDGET(adw_tab_bar_new());
+	adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
+
+	headerbar = gtk_header_bar_new();
     gtk_window_set_titlebar(GTK_WINDOW(window), headerbar);
 
     text_view = gtk_text_view_new();
