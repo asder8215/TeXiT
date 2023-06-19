@@ -59,8 +59,7 @@ static void share_enable_response(GtkDialog* dialog, int response, ShareEnablePa
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
-    printf("New File\n");
-    new_tab_page(params->tab_view);
+    new_tab_page(params->tab_view, "Untitled");
 }
 
 
@@ -79,7 +78,7 @@ static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         filePath = g_file_get_path(file);
         printf("Open File: %s\n", filePath);
-        GtkTextBuffer* buffer = new_tab_page(tab_view);
+        GtkTextBuffer* buffer = new_tab_page(tab_view, g_file_get_basename(file)).buffer;
 
         char* content;
         gsize length;
@@ -99,18 +98,18 @@ static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView
 }
 
 static void save_file_click(GtkButton* button, FileClickParams* params) {
-    GtkTextBuffer* buffer = get_active_page_buffer(params->tab_view);
+    Page page = get_active_page(params->tab_view);
     
 	// If in existing file, just overwrite file with content on TextView
 	// (No need for save dialog pop up)	
 	if (filePath != NULL) {
 		GFile* currFile = g_file_new_for_path((const char*) filePath);		
 		GtkTextIter start, end;
-		gtk_text_buffer_get_bounds(buffer, &start, &end);
-		char* content = gtk_text_buffer_get_text(buffer, &start, 
+		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
+		char* content = gtk_text_buffer_get_text(page.buffer, &start, 
 												&end, false);
 		GError* error = NULL;
-		gsize length = gtk_text_buffer_get_char_count(buffer);
+		gsize length = gtk_text_buffer_get_char_count(page.buffer);
 		
 		if(g_file_replace_contents(currFile, content, length, 
 		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error) == false){
@@ -131,23 +130,28 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
     	
 		gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
    	    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    	g_signal_connect(file_chooser, "response", G_CALLBACK(save_file_response), buffer);
+    	g_signal_connect(file_chooser, "response", G_CALLBACK(save_file_response), params);
     	gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 	}
 }
 
-static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuffer* buffer) {
+static void save_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
+    Page page = get_active_page(params->tab_view);
+
     if(response == GTK_RESPONSE_ACCEPT){
         // Creating a GFile from file name set in file chooser for dialog
 		GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
 		// Saving the current file name
 		filePath = g_file_get_path(file);
+
+        // Set tab title
+        adw_tab_page_set_title(page.page, g_file_get_basename(file));
 		
 		// Fetching the current content in the file
 		GtkTextIter start, end;
-		gtk_text_buffer_get_bounds(buffer, &start, &end);
-		char* content = gtk_text_buffer_get_text(buffer, &start, &end, false);
-		gsize length = gtk_text_buffer_get_char_count(buffer);
+		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
+		char* content = gtk_text_buffer_get_text(page.buffer, &start, &end, false);
+		gsize length = gtk_text_buffer_get_char_count(page.buffer);
 		GError* error = NULL;
 		
 		// Overwriting the file content with the written content in the application
@@ -166,25 +170,35 @@ static void save_file_response(GtkNativeDialog* dialog, int response, GtkTextBuf
 	g_object_unref(dialog);
 }
 
-static GtkTextBuffer* new_tab_page(AdwTabView* tab_view) {
+static Page new_tab_page(AdwTabView* tab_view, const char* title) {
     Widget scroller = gtk_scrolled_window_new(),
         text_view = gtk_text_view_new();
+    AdwTabPage* tab_page;
+    Page rtrn;
     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
     gtk_widget_set_vexpand(scroller, true);
     gtk_widget_set_size_request(scroller, 400, 200);
 
-    adw_tab_view_append(tab_view, scroller);
-    return gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    tab_page = adw_tab_view_append(tab_view, scroller);
+    adw_tab_page_set_title(tab_page, title);
+    adw_tab_page_set_icon(tab_page, g_themed_icon_new("text-x-generic-symbolic"));
+    // TODO: store the filepath in the TabPage
+
+    rtrn.page = tab_page;
+    rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    return rtrn;
 }
-static GtkTextBuffer* get_active_page_buffer(AdwTabView* tab_view) {
-    return gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+static Page get_active_page(AdwTabView* tab_view) {
+    Page rtrn;
+    rtrn.page = adw_tab_view_get_selected_page(tab_view);
+    rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
         gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
-            adw_tab_page_get_child(
-                adw_tab_view_get_selected_page(tab_view)
-            )
+            adw_tab_page_get_child(rtrn.page)
         ))
     ));
+
+    return rtrn;
 }
 
 void main_window(GtkApplication *app) {
@@ -211,6 +225,7 @@ void main_window(GtkApplication *app) {
 
     tab_view = GTK_WIDGET(adw_tab_view_new());
     tabbar = GTK_WIDGET(adw_tab_bar_new());
+    adw_tab_view_set_default_icon(ADW_TAB_VIEW(tab_view), g_themed_icon_new("text-x-generic-symbolic"));
     adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
 
     file_click_params->window = GTK_WINDOW(window);
@@ -250,6 +265,7 @@ void main_window(GtkApplication *app) {
 
     window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_append(GTK_BOX(window_box), headerbar);
+    gtk_box_append(GTK_BOX(window_box), tabbar);
     gtk_box_append(GTK_BOX(window_box), tab_view);
     gtk_box_append(GTK_BOX(window_box), action_bar);
     adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), window_box);
