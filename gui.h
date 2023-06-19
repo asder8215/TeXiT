@@ -7,9 +7,9 @@
 typedef GtkWidget* Widget;
 
 typedef struct {
-    GtkEntry* host_port;
-    GtkEntry* connect_ip;
-    GtkEntry* connect_port;
+    GtkEditable* host_port;
+    GtkEditable* connect_ip;
+    GtkEditable* connect_port;
 } ShareDialogEntries;
 
 typedef struct {
@@ -37,7 +37,7 @@ typedef struct {
 
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
 /// *params* is malloc-ed by `share_toggle_click()`, which is a callback, so *params* must be freed by this function.
-static void share_enable_response(GtkDialog* dialog, int response, ShareEnableParams* params);
+static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);
 /// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
 /// That same ptr should be freed only when the program terminates.
 static void open_file_click(GtkButton* button, FileClickParams* params);
@@ -56,8 +56,9 @@ static Page get_active_page(AdwTabView* tab_view);
 
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);
-/// Creates the UI for the dialog that allows user to activate sharing.
+
+/// Creates the inner UI for the dialog that allows user to activate sharing.
 /// Returns pointers to entries that will hold relevant values for hosting/connecting.
-ShareDialogEntries share_dialog(GtkBox* dialog_content_area);
+ShareDialogEntries set_share_dialog_child(AdwMessageDialog* dialog);
 
 #endif // __GUI_H__
