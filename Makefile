@@ -8,6 +8,7 @@ CFLAGS = -g3 `pkg-config --cflags gtk4` `pkg-config --cflags libadwaita-1`
 LFLAGS = `pkg-config --libs gtk4` `pkg-config --libs libadwaita-1`
 
 
+
 all: $(NAME)
 
 $(NAME): $(OBJS)
