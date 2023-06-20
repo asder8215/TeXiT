@@ -9,7 +9,7 @@ static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
 
 // Global variable for file name (will be changed later)
-static char* filePath = NULL;
+//static char* filePath = NULL;
 
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
@@ -59,7 +59,7 @@ static void share_enable_response(GtkDialog* dialog, int response, ShareEnablePa
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
-    new_tab_page(params->tab_view, "Untitled");
+    new_tab_page(params->tab_view, "Untitled", NULL);
 }
 
 
@@ -76,9 +76,9 @@ static void open_file_click(GtkButton* button, FileClickParams* params) {
 static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view) {
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
-        filePath = g_file_get_path(file);
+        const char* filePath = g_file_get_path(file);
         printf("Open File: %s\n", filePath);
-        GtkTextBuffer* buffer = new_tab_page(tab_view, g_file_get_basename(file)).buffer;
+        GtkTextBuffer* buffer = new_tab_page(tab_view, g_file_get_basename(file), filePath).buffer;
 
         char* content;
         gsize length;
@@ -99,10 +99,16 @@ static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView
 
 static void save_file_click(GtkButton* button, FileClickParams* params) {
     Page page = get_active_page(params->tab_view);
-    
+   
+	// Grabbing filePath from tab page. 
+	const char* filePath = (const char*) g_object_get_data(G_OBJECT(page.page),
+														   "file_path");
+	
+
+	//const char* filePath = adw_tab_page_get_keyword(page.page);
 	// If in existing file, just overwrite file with content on TextView
 	// (No need for save dialog pop up)	
-	if (filePath != NULL) {
+	if(filePath != NULL) {
 		GFile* currFile = g_file_new_for_path((const char*) filePath);		
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
@@ -142,8 +148,9 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
         // Creating a GFile from file name set in file chooser for dialog
 		GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
 		// Saving the current file name
-		filePath = g_file_get_path(file);
-
+		const char* filePath = g_file_get_path(file);
+		g_object_set_data_full(G_OBJECT(page.page), "file_path", g_strdup(filePath), (GDestroyNotify) g_free);
+		
         // Set tab title
         adw_tab_page_set_title(page.page, g_file_get_basename(file));
 		
@@ -170,24 +177,29 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 	g_object_unref(dialog);
 }
 
-static Page new_tab_page(AdwTabView* tab_view, const char* title) {
+static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
     Widget scroller = gtk_scrolled_window_new(),
         text_view = gtk_text_view_new();
+	//		label = gtk_label_new();
     AdwTabPage* tab_page;
     Page rtrn;
     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
+	//gtk
     gtk_widget_set_vexpand(scroller, true);
     gtk_widget_set_size_request(scroller, 400, 200);
 
     tab_page = adw_tab_view_append(tab_view, scroller);
     adw_tab_page_set_title(tab_page, title);
     adw_tab_page_set_icon(tab_page, g_themed_icon_new("text-x-generic-symbolic"));
-    // TODO: store the filepath in the TabPage
-
+	
     rtrn.page = tab_page;
     rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-    return rtrn;
+	// stores the file path to the heap for this specific tab page (calls on g_free when
+	// the tab page is destroyed).
+	g_object_set_data_full(G_OBJECT(rtrn.page), "file_path", g_strdup(filePath), (GDestroyNotify) g_free);
+   
+	 return rtrn;
 }
 static Page get_active_page(AdwTabView* tab_view) {
     Page rtrn;

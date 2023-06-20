@@ -50,7 +50,7 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 /// Appends a new page with a TextView to the TabView.
 /// Sets the *title*, and a default icon.
 /// Returns the newly created TabPage and its TextBuffer.
-static Page new_tab_page(AdwTabView* tab_view, const char* title);
+static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath);
 /// Returns an alternative `Page` struct which references the AdwTabPage and TextBuffer of the current Tab.
 static Page get_active_page(AdwTabView* tab_view);
 
