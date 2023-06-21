@@ -1,5 +1,7 @@
-# Text-Editor
-A simple text editor written in C.
+# [Title of App WIP]
+This is a simple text editor built in C, utilizing GTK4 and Libadwaita packages.
+
+# Demo of App
 
 # Language Server (IDE)
 
