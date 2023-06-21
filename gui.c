@@ -8,6 +8,9 @@ static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
 static const char* SHARE_RESPONSE_CANCEL = "cancel";
 static const char* SHARE_RESPONSE_HOST = "host";
 static const char* SHARE_RESPONSE_CONNECT = "connect";
+// Minimum dimensions of the Window's main content (the TextView area).
+static const unsigned int CONTENT_MIN_WIDTH = 400;
+static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
 // Global variable for file name (will be changed later)
 //static char* filePath = NULL;
@@ -111,12 +114,16 @@ static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView
 }
 
 static void save_file_click(GtkButton* button, FileClickParams* params) {
+    // could be NULL if no tabs are open
     Page page = get_active_page(params->tab_view);
+    if (page.page == NULL) {
+        adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("No documents are open"));
+        return;
+    }
    
 	// Grabbing filePath from tab page. 
 	const char* filePath = (const char*) g_object_get_data(G_OBJECT(page.page),
 														   "file_path");
-	
 
 	//const char* filePath = adw_tab_page_get_keyword(page.page);
 	// If in existing file, just overwrite file with content on TextView
@@ -155,6 +162,7 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
 }
 
 static void save_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
+    // page or buffer are Not NULL, this is only called if there was a tab to save.
     Page page = get_active_page(params->tab_view);
 
     if(response == GTK_RESPONSE_ACCEPT){
@@ -193,14 +201,10 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
     Widget scroller = gtk_scrolled_window_new(),
         text_view = gtk_text_view_new();
-	//		label = gtk_label_new();
     AdwTabPage* tab_page;
     Page rtrn;
     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
-	//gtk
-    gtk_widget_set_vexpand(scroller, true);
-    gtk_widget_set_size_request(scroller, 400, 200);
 
     tab_page = adw_tab_view_append(tab_view, scroller);
     adw_tab_page_set_title(tab_page, title);
@@ -212,16 +216,19 @@ static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* fi
 	// the tab page is destroyed).
 	g_object_set_data_full(G_OBJECT(rtrn.page), "file_path", g_strdup(filePath), (GDestroyNotify) g_free);
    
-	 return rtrn;
+	return rtrn;
 }
 static Page get_active_page(AdwTabView* tab_view) {
     Page rtrn;
     rtrn.page = adw_tab_view_get_selected_page(tab_view);
-    rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
-        gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
-            adw_tab_page_get_child(rtrn.page)
-        ))
-    ));
+    if (rtrn.page != NULL)
+        rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+            gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
+                adw_tab_page_get_child(rtrn.page)
+            ))
+        ));
+    else
+        rtrn.buffer = NULL;
 
 	return rtrn;
 }
@@ -237,9 +244,10 @@ void main_window(GtkApplication *app) {
                 // folder_open,
                 share_toggle,
             tabbar,
-            tab_view,
-                // scroller,
-                //     text_view,
+            toast_overlay,
+                tab_view,
+                    // scroller,
+                    //     text_view,
             action_bar;
 
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
@@ -272,12 +280,18 @@ void main_window(GtkApplication *app) {
 	adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), file_save);
 
     tab_view = GTK_WIDGET(adw_tab_view_new());
+    gtk_widget_set_vexpand(tab_view, true);
+    gtk_widget_set_size_request(tab_view, CONTENT_MIN_WIDTH, CONTENT_MIN_HEIGHT);
     tabbar = GTK_WIDGET(adw_tab_bar_new());
     adw_tab_view_set_default_icon(ADW_TAB_VIEW(tab_view), g_themed_icon_new("text-x-generic-symbolic"));
     adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
 
+    toast_overlay = adw_toast_overlay_new();
+    adw_toast_overlay_set_child(ADW_TOAST_OVERLAY(toast_overlay), tab_view);
+
     file_click_params->window = GTK_WINDOW(window);
     file_click_params->tab_view = ADW_TAB_VIEW(tab_view);
+    file_click_params->toast_overlay = ADW_TOAST_OVERLAY(toast_overlay);
 
 	// folder_open = gtk_button_new();
     // gtk_button_set_child(GTK_BUTTON(folder_open), gtk_image_new_from_icon_name("folder-symbolic"));
@@ -294,7 +308,7 @@ void main_window(GtkApplication *app) {
     window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_append(GTK_BOX(window_box), headerbar);
     gtk_box_append(GTK_BOX(window_box), tabbar);
-    gtk_box_append(GTK_BOX(window_box), tab_view);
+    gtk_box_append(GTK_BOX(window_box), toast_overlay);
     gtk_box_append(GTK_BOX(window_box), action_bar);
     adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), window_box);
 
