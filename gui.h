@@ -21,8 +21,10 @@ typedef struct {
 typedef struct {
     /// Reference to the main-window so it can attach to it as modal.
     GtkWindow* window;
-    // Reference to the tabview to create a new tab with the file content.
+    /// Reference to the tabview to create a new tab with the file content.
     AdwTabView* tab_view;
+    /// Reference to the overlay to show Toasts.
+    AdwToastOverlay* toast_overlay;
 } FileClickParams;
 
 /// Things that were heap-allocated in `main_window()` and must be freed when program terminates.
@@ -52,6 +54,7 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 /// Returns the newly created TabPage and its TextBuffer.
 static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath);
 /// Returns an alternative `Page` struct which references the AdwTabPage and TextBuffer of the current Tab.
+/// Returns NULL if there are no tabs in the TabView.
 static Page get_active_page(AdwTabView* tab_view);
 
 void main_window(GtkApplication *app);
