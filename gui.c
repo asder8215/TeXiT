@@ -29,9 +29,9 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
         // TODO: Check entry is not empty whe user clicks one of these.
         adw_message_dialog_add_response(dialog, SHARE_RESPONSE_HOST, "Host");
         adw_message_dialog_add_response(dialog, SHARE_RESPONSE_CONNECT, "Connect");
-        adw_message_dialog_set_response_appearance (ADW_MESSAGE_DIALOG (dialog), "cancel", ADW_RESPONSE_DESTRUCTIVE);
-        adw_message_dialog_set_default_response (ADW_MESSAGE_DIALOG (dialog), "cancel");
-        adw_message_dialog_set_close_response (ADW_MESSAGE_DIALOG (dialog), "cancel");
+        adw_message_dialog_set_response_appearance(ADW_MESSAGE_DIALOG (dialog), "cancel", ADW_RESPONSE_DESTRUCTIVE);
+        adw_message_dialog_set_default_response(ADW_MESSAGE_DIALOG (dialog), "cancel");
+        adw_message_dialog_set_close_response(ADW_MESSAGE_DIALOG (dialog), "cancel");
 
         ShareDialogEntries entries = set_share_dialog_child(dialog);
         // C moment :( Why must it be done like this
@@ -234,85 +234,32 @@ static Page get_active_page(AdwTabView* tab_view) {
 }
 
 void main_window(GtkApplication *app) {
-    Widget window,
-        window_box,
-            headerbar,
-                title,
-                file_new,
-                file_open,
-                file_save,
-                // folder_open,
-                share_toggle,
-            tabbar,
-            toast_overlay,
-                tab_view,
-                    // scroller,
-                    //     text_view,
-            action_bar;
+    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/main-window.ui");
 
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;
-	
-    window = adw_application_window_new(app);
-    title = adw_window_title_new("Text Editor", NULL);
+
+    GtkWindow* window = GTK_WINDOW(gtk_builder_get_object(builder, "main-window"));
+    gtk_window_set_application(window, app);
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
 
-    headerbar = adw_header_bar_new();
-    adw_header_bar_set_title_widget(ADW_HEADER_BAR(headerbar), title);
+    file_click_params->window = window;
+    file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
+    file_click_params->toast_overlay = ADW_TOAST_OVERLAY(gtk_builder_get_object(builder, "toast-overlay"));
 
-	file_new = gtk_button_new();
-	gtk_button_set_child(GTK_BUTTON(file_new), gtk_image_new_from_icon_name("document-new-symbolic"));
-	gtk_widget_set_tooltip_text(file_new, "New File");
+	GtkButton* file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
 	g_signal_connect(file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
-	adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), file_new);
-
-    file_open = gtk_button_new();
-    gtk_button_set_child(GTK_BUTTON(file_open), gtk_image_new_from_icon_name("text-x-generic-symbolic"));
-    gtk_widget_set_tooltip_text(file_open, "Open File");
+    GtkButton* file_open = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
 	g_signal_connect(file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
-    adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), file_open);
-    
-	file_save = gtk_button_new();
-	gtk_button_set_child(GTK_BUTTON(file_save), gtk_image_new_from_icon_name("document-save-symbolic"));
-    gtk_widget_set_tooltip_text(file_save, "Save File");
+	GtkButton* file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
 	g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
-	adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), file_save);
 
-    tab_view = GTK_WIDGET(adw_tab_view_new());
-    gtk_widget_set_vexpand(tab_view, true);
-    gtk_widget_set_size_request(tab_view, CONTENT_MIN_WIDTH, CONTENT_MIN_HEIGHT);
-    tabbar = GTK_WIDGET(adw_tab_bar_new());
-    adw_tab_view_set_default_icon(ADW_TAB_VIEW(tab_view), g_themed_icon_new("text-x-generic-symbolic"));
-    adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
-
-    toast_overlay = adw_toast_overlay_new();
-    adw_toast_overlay_set_child(ADW_TOAST_OVERLAY(toast_overlay), tab_view);
-
-    file_click_params->window = GTK_WINDOW(window);
-    file_click_params->tab_view = ADW_TAB_VIEW(tab_view);
-    file_click_params->toast_overlay = ADW_TOAST_OVERLAY(toast_overlay);
-
-	// folder_open = gtk_button_new();
-    // gtk_button_set_child(GTK_BUTTON(folder_open), gtk_image_new_from_icon_name("folder-symbolic"));
-    // g_signal_connect(folder_open, "clicked", G_CALLBACK(open_folder_click), window);
-    // adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), folder_open);
-    share_toggle = gtk_toggle_button_new_with_label(SERVER_TOGGLE_OFF_TITLE);
+    GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_toggle_button_new_with_label(SERVER_TOGGLE_OFF_TITLE));
+    gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
-    adw_header_bar_pack_end(ADW_HEADER_BAR(headerbar), share_toggle);
 
-    action_bar = gtk_action_bar_new();
-    gtk_widget_set_vexpand(action_bar, false);
-    gtk_action_bar_pack_start(GTK_ACTION_BAR(action_bar), gtk_label_new("Share: Not connected"));
-
-    window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_append(GTK_BOX(window_box), headerbar);
-    gtk_box_append(GTK_BOX(window_box), tabbar);
-    gtk_box_append(GTK_BOX(window_box), toast_overlay);
-    gtk_box_append(GTK_BOX(window_box), action_bar);
-    adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), window_box);
-
-    gtk_window_present(GTK_WINDOW(window));
+    gtk_window_present(window);
 }
 
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params) {
@@ -322,54 +269,28 @@ void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params) {
 
 /// Callback for when user presses Enter on the entry.
 /// Emtits the `response` signal with response_id "host".
-static void host_port_activate(AdwEntryRow* entry, AdwMessageDialog* dialog) {
-    adw_message_dialog_response (dialog,SHARE_RESPONSE_HOST);
+static void host_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
+        adw_message_dialog_response(dialog,SHARE_RESPONSE_HOST);
 }
 /// Callback for when user presses Enter on the entry.
 /// Shifts focus to the `connect_port` entry.
-static void connect_ip_activate(AdwEntryRow* entry, AdwEntryRow* connect_port) {
+static void connect_ip_activate(GtkEditable* entry, GtkEditable* connect_port) {
     gtk_widget_grab_focus(GTK_WIDGET(connect_port));
 }
 /// Callback for when user presses Enter on the entry.
 /// Emtits the `response` signal with response_id "connect".
-static void connect_port_activate(AdwEntryRow* entry, AdwMessageDialog* dialog) {
-    adw_message_dialog_response (dialog,SHARE_RESPONSE_CONNECT);
+static void connect_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
+    adw_message_dialog_response(dialog,SHARE_RESPONSE_CONNECT);
 }
 ShareDialogEntries set_share_dialog_child(AdwMessageDialog* dialog) {
-    Widget container,
-        host_group,
-            host_port,
-        connect_group,
-            connect_ip,
-            connect_port;
-
-    host_port = adw_entry_row_new();
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(host_port), "Port");
-    connect_ip = adw_entry_row_new();
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(connect_ip), "IP Address");
-    connect_port = adw_entry_row_new();
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(connect_port), "Port");
+    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/share-dialog.ui");
+    GtkEditable* host_port = GTK_EDITABLE(gtk_builder_get_object(builder, "host-port"));
+    GtkEditable* connect_ip = GTK_EDITABLE(gtk_builder_get_object(builder, "connect-ip"));
+    GtkEditable* connect_port = GTK_EDITABLE(gtk_builder_get_object(builder, "connect-port"));
     // Connect Entry callbacks for when user presses Enter
     g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
     g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
     g_signal_connect(connect_port, "entry-activated", G_CALLBACK(connect_port_activate), dialog);
-
-    host_group = adw_preferences_group_new();
-    adw_preferences_group_set_title(ADW_PREFERENCES_GROUP(host_group), "Host");
-    adw_preferences_group_set_description(ADW_PREFERENCES_GROUP(host_group), "Create a Share session for others to connect to");
-    adw_preferences_group_add(ADW_PREFERENCES_GROUP(host_group), host_port);
-    connect_group = adw_preferences_group_new();
-    adw_preferences_group_set_title(ADW_PREFERENCES_GROUP(connect_group), "Connect");
-    adw_preferences_group_set_description(ADW_PREFERENCES_GROUP(connect_group), "Connect to someone else's Share session");
-    adw_preferences_group_add(ADW_PREFERENCES_GROUP(connect_group), connect_ip);
-    adw_preferences_group_add(ADW_PREFERENCES_GROUP(connect_group), connect_port);
-
-    container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
-    gtk_box_append(GTK_BOX(container), host_group);
-    gtk_box_append(GTK_BOX(container), connect_group);
-
-    // Set dialog content
-    adw_message_dialog_set_extra_child(dialog, container);
 
     ShareDialogEntries r = {
         GTK_EDITABLE(host_port),
