@@ -33,6 +33,7 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
         params->entries = entries;
 
         // Connect response callback
+        gtk_window_set_transient_for(GTK_WINDOW(dialog), window);
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
