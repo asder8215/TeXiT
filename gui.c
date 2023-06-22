@@ -17,39 +17,26 @@ static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
-    const char* label;
     if (gtk_toggle_button_get_active(toggle)) {
         // Deactivate toggle button. `share_enable_response()` should activate the toggle button if setup was successful.
         gtk_toggle_button_set_active(toggle, false);
 
-        // Freed by `share_enable_response()`.
-        AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(adw_message_dialog_new(window, "Start Sharing", NULL));
-        // Why did Adwaita make the IDs a string instead of an int???
-        adw_message_dialog_add_response(dialog, SHARE_RESPONSE_CANCEL, "Cancel");
-        // TODO: Check entry is not empty whe user clicks one of these.
-        adw_message_dialog_add_response(dialog, SHARE_RESPONSE_HOST, "Host");
-        adw_message_dialog_add_response(dialog, SHARE_RESPONSE_CONNECT, "Connect");
-        adw_message_dialog_set_response_appearance(ADW_MESSAGE_DIALOG (dialog), "cancel", ADW_RESPONSE_DESTRUCTIVE);
-        adw_message_dialog_set_default_response(ADW_MESSAGE_DIALOG (dialog), "cancel");
-        adw_message_dialog_set_close_response(ADW_MESSAGE_DIALOG (dialog), "cancel");
-
-        ShareDialogEntries entries = set_share_dialog_child(dialog);
+        // ~~Freed by `share_enable_response()`.~~
+        // Gives error when `g_free(builder), even though it should be freed accroding to https://docs.gtk.org/gtk4/ctor.Builder.new_from_resource.html
+        GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/share-dialog.ui");
+        AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(gtk_builder_get_object(builder, "dialog"));
+        ShareDialogEntries entries = share_dialog_entries(builder);
         // C moment :( Why must it be done like this
         // Freed by `share_enable_response()`.
         ShareEnableParams* params = malloc(sizeof(ShareEnableParams));
         params->toggle = GTK_BUTTON(toggle);
         params->entries = entries;
 
-        // Make the dialog a modal
-        gtk_window_set_modal(GTK_WINDOW(dialog), true);
-        gtk_window_set_transient_for(GTK_WINDOW(dialog), window);
-        gtk_window_set_resizable(GTK_WINDOW(dialog), false);
         // Connect response callback
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
-        label = SERVER_TOGGLE_OFF_TITLE;
-        gtk_button_set_label(GTK_BUTTON(toggle), label);
+        gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
     }
 }
 
@@ -59,17 +46,18 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
     // strcmp() == 0 when strings are equal.
     if (strcmp(response, SHARE_RESPONSE_HOST) == 0) {
         const char* port = gtk_editable_get_text(params->entries.host_port);
+
         printf("Host with port %s\n", port);
     } else if (strcmp(response, SHARE_RESPONSE_CONNECT) == 0) {
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
         const char* port = gtk_editable_get_text(params->entries.connect_port);
+
         printf("Connect to %s with port %s\n", ip, port);
     } else {
         return;
     }
     // TODO: only change label if server start was successful.
     gtk_button_set_label(params->toggle, SERVER_TOGGLE_ON_TITLE);
-    gtk_window_destroy(GTK_WINDOW(dialog));
     free(params);
 }
 
@@ -255,7 +243,7 @@ void main_window(GtkApplication *app) {
 	GtkButton* file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
 	g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
 
-    GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_toggle_button_new_with_label(SERVER_TOGGLE_OFF_TITLE));
+    GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
 
@@ -282,11 +270,11 @@ static void connect_ip_activate(GtkEditable* entry, GtkEditable* connect_port) {
 static void connect_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
     adw_message_dialog_response(dialog,SHARE_RESPONSE_CONNECT);
 }
-ShareDialogEntries set_share_dialog_child(AdwMessageDialog* dialog) {
-    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/share-dialog.ui");
-    GtkEditable* host_port = GTK_EDITABLE(gtk_builder_get_object(builder, "host-port"));
-    GtkEditable* connect_ip = GTK_EDITABLE(gtk_builder_get_object(builder, "connect-ip"));
-    GtkEditable* connect_port = GTK_EDITABLE(gtk_builder_get_object(builder, "connect-port"));
+ShareDialogEntries share_dialog_entries(GtkBuilder* dialog_builder) {
+    AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(gtk_builder_get_object(dialog_builder, "dialog"));
+    GtkEditable* host_port = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "host-port"));
+    GtkEditable* connect_ip = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "connect-ip"));
+    GtkEditable* connect_port = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "connect-port"));
     // Connect Entry callbacks for when user presses Enter
     g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
     g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
