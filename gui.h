@@ -21,6 +21,10 @@ typedef struct {
 typedef struct {
     /// Reference to the main-window so it can attach to it as modal.
     GtkWindow* window;
+    /// Reference to the default label when no tabs exist.
+    GtkLabel* label;
+    /// Reference to the tab bar.
+    AdwTabBar* tabbar;
     /// Reference to the tabview to create a new tab with the file content.
     AdwTabView* tab_view;
     /// Reference to the overlay to show Toasts.
@@ -43,7 +47,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 /// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
 /// That same ptr should be freed only when the program terminates.
 static void open_file_click(GtkButton* button, FileClickParams* params);
-static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view);
+static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params);
 /// Refer to `open_file_click()` about *params*.
 static void save_file_click(GtkButton* button, FileClickParams* params);
 /// Writes the Buffer of the current TabPage, and sets the Tab title if was a new file.
