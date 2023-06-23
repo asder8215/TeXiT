@@ -61,22 +61,28 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
+    /*
     if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
         gtk_widget_set_visible(GTK_WIDGET(params->label), false);
     }
+    */
 
     new_tab_page(params->tab_view, "Untitled", NULL);
 
+    /*
     if(adw_tab_view_get_n_pages(params->tab_view) == 1){
         gtk_widget_set_visible(GTK_WIDGET(params->tabbar), true);
     }
+    */
 }
 
 
 static void open_file_click(GtkButton* button, FileClickParams* params) {
+    /*
     if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
         gtk_widget_set_visible(GTK_WIDGET(params->label), false);
     }
+    */
     GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
         params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
     );
@@ -93,9 +99,11 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
         printf("Open File: %s\n", filePath);
         GtkTextBuffer* buffer = new_tab_page(params->tab_view, g_file_get_basename(file), filePath).buffer;
 
+        /*
         if(adw_tab_view_get_n_pages(params->tab_view) == 1){
             gtk_widget_set_visible(GTK_WIDGET(params->tabbar), true);
         }
+        */
 
         char* content;
         gsize length;
@@ -379,6 +387,8 @@ void main_window(GtkApplication *app) {
     file_click_params->window = window;
     file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
     file_click_params->toast_overlay = ADW_TOAST_OVERLAY(gtk_builder_get_object(builder, "toast-overlay"));
+
+    g_signal_connect(file_click_params->tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
 
     GtkButton* file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
     g_signal_connect(file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
