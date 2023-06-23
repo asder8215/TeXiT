@@ -26,7 +26,6 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
 
     // Leave here just in case, but will not be used.
     // // Install properties
-    // // TODO: Error: g_object_new_is_valid_property: object class 'EditorBuffer' has no property named 'edited'
     // GParamSpec* edited_param_spec = g_param_spec_boolean(
     //     "edited", NULL,
     //     "Whether the user typed something into the Buffer.",
@@ -51,7 +50,7 @@ static void editor_buffer_init(EditorBuffer* self) {
 EditorBuffer* editor_buffer_new(const char* file_path) {
     if (file_path != NULL)
         file_path = strdup(file_path);
-    // TODO: RuntimeError: g_object_new_is_valid_property: object class 'EditorBuffer' has no property named 'edited'
+    
     EditorBuffer* buffer = g_object_new(EDITOR_TYPE_BUFFER, NULL);
     buffer->edited = false;
     buffer->file_path = file_path;
@@ -94,22 +93,16 @@ typedef struct {
 } SaveResponseParams;
 
 static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveResponseParams* params) {
-    GError* error = NULL;
-    GFile* file = gtk_file_dialog_save_finish(dialog, result, &error);
-    if (error != NULL) {
-        // User cancelled save
-        g_error_free(error);
-        g_object_unref(dialog);
-        free(params);
-        return;
+    GFile* file = gtk_file_dialog_save_finish(dialog, result, NULL);
+    // User cancelled if file is NULL
+    if (file != NULL) {
+        write_file(file, &params->buffer->parent);
+
+        // Set tab title
+        adw_tab_page_set_title(params->current_page, g_file_get_basename(file));
+        // Set Buffer file_path
+        params->buffer->file_path = g_file_get_path(file);
     }
-
-    write_file(file, &params->buffer->parent);
-
-    // Set tab title
-    adw_tab_page_set_title(params->current_page, g_file_get_basename(file));
-    // Set Buffer file_path
-    params->buffer->file_path = g_file_get_path(file);
 
     g_object_unref(dialog);
     free(params);
@@ -128,7 +121,6 @@ void editor_buffer_save(EditorBuffer* self, AdwTabPage* current_page, GtkWindow*
         SaveResponseParams* params = malloc(sizeof(SaveResponseParams));
         params->current_page = current_page;
         params->buffer = self;
-        // TODO: use parent window.
         gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(save_response), params);
         return;
     }
