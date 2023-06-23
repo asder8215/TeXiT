@@ -144,13 +144,13 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
 		GFile* currFile = g_file_new_for_path((const char*) filePath);		
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
-		char* content = gtk_text_buffer_get_text(page.buffer, &start, 
-												&end, false);
+		char* content = gtk_text_buffer_get_text(page.buffer, &start, &end, false);
 		GError* error = NULL;
-		gsize length = gtk_text_buffer_get_char_count(page.buffer);
-		
-		if(g_file_replace_contents(currFile, content, length, 
-		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error) == false){
+		//gsize length = gtk_text_buffer_get_char_count(page.buffer);
+		gsize length = strlen(content);
+
+		if(!g_file_replace_contents(currFile, content, length, 
+		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error)){
 			printf("%s", error->message);
 			g_object_unref(currFile);
 			g_object_unref(error);
@@ -197,8 +197,9 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
 		char* content = gtk_text_buffer_get_text(page.buffer, &start, &end, false);
-		gsize length = gtk_text_buffer_get_char_count(page.buffer);
-		GError* error = NULL;
+		//gsize length = gtk_text_buffer_get_char_count(page.buffer);
+		gsize length = strlen(content);
+        GError* error = NULL;
 		
 		// Overwriting the file content with the written content in the application
 		// Error message will pop up if replacing content fails
@@ -209,8 +210,7 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 			g_object_unref(file);
 			exit(0);
 		}
-
-		
+	
 		// Free up stuff not needed afterward.
 		g_object_unref(file);
 	}
@@ -271,8 +271,9 @@ static gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow
 	GtkTextIter start, end;
 	gtk_text_buffer_get_bounds(buffer, &start, &end);
 	char* contentBuffer = gtk_text_buffer_get_text(buffer, &start, &end, false);
-	gsize lengthBuffer = gtk_text_buffer_get_char_count(buffer);
-    
+	//gsize lengthBuffer = gtk_text_buffer_get_char_count(buffer);
+    gsize lengthBuffer = strlen(contentBuffer);
+
     int is_buffer_edited = 0;
 
     // If in existing file
