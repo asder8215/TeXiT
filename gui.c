@@ -12,9 +12,6 @@ static const char* SHARE_RESPONSE_CONNECT = "connect";
 static const unsigned int CONTENT_MIN_WIDTH = 400;
 static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
-// Global variable for file name (will be changed later)
-//static char* filePath = NULL;
-
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
     const char* label;
@@ -75,26 +72,41 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
+    if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
+        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
+    }
+
     new_tab_page(params->tab_view, "Untitled", NULL);
+
+    if(adw_tab_view_get_n_pages(params->tab_view) == 1){
+        gtk_widget_set_visible(GTK_WIDGET(params->tabbar), true);
+    }
 }
 
 
 static void open_file_click(GtkButton* button, FileClickParams* params) {
+    if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
+        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
+    }
     GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
         params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
     );
     gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
     gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params->tab_view);
+    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params);
     gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
 }
 
-static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view) {
+static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         const char* filePath = g_file_get_path(file);
         printf("Open File: %s\n", filePath);
-        GtkTextBuffer* buffer = new_tab_page(tab_view, g_file_get_basename(file), filePath).buffer;
+        GtkTextBuffer* buffer = new_tab_page(params->tab_view, g_file_get_basename(file), filePath).buffer;
+
+        if(adw_tab_view_get_n_pages(params->tab_view) == 1){
+            gtk_widget_set_visible(GTK_WIDGET(params->tabbar), true);
+        }
 
         char* content;
         gsize length;
@@ -123,7 +135,7 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
    
 	// Grabbing filePath from tab page. 
 	const char* filePath = (const char*) g_object_get_data(G_OBJECT(page.page),
-														   "file_path");
+	   													   "file_path");
 
 	//const char* filePath = adw_tab_page_get_keyword(page.page);
 	// If in existing file, just overwrite file with content on TextView
@@ -132,19 +144,25 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
 		GFile* currFile = g_file_new_for_path((const char*) filePath);		
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
-		char* content = gtk_text_buffer_get_text(page.buffer, &start, 
-												&end, false);
+		char* content = gtk_text_buffer_get_text(page.buffer, &start, &end, false);
 		GError* error = NULL;
-		gsize length = gtk_text_buffer_get_char_count(page.buffer);
-		
-		if(g_file_replace_contents(currFile, content, length, 
-		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error) == false){
+		//gsize length = gtk_text_buffer_get_char_count(page.buffer);
+		gsize length = strlen(content);
+
+		if(!g_file_replace_contents(currFile, content, length, 
+		   NULL, false, G_FILE_CREATE_NONE, NULL, NULL, &error)){
 			printf("%s", error->message);
 			g_object_unref(currFile);
 			g_object_unref(error);
 			exit(0);
 		}
 		g_object_unref(currFile);
+        
+        // small hack to free up params from the tab page close event.
+        if(params->toast_overlay == NULL){
+            adw_tab_view_close_page_finish(params->tab_view, page.page, true);
+            free(params);
+        }
 	}
 	// We're in a completely new file.
 	else {
@@ -179,8 +197,9 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 		GtkTextIter start, end;
 		gtk_text_buffer_get_bounds(page.buffer, &start, &end);
 		char* content = gtk_text_buffer_get_text(page.buffer, &start, &end, false);
-		gsize length = gtk_text_buffer_get_char_count(page.buffer);
-		GError* error = NULL;
+		//gsize length = gtk_text_buffer_get_char_count(page.buffer);
+		gsize length = strlen(content);
+        GError* error = NULL;
 		
 		// Overwriting the file content with the written content in the application
 		// Error message will pop up if replacing content fails
@@ -191,11 +210,17 @@ static void save_file_response(GtkNativeDialog* dialog, int response, FileClickP
 			g_object_unref(file);
 			exit(0);
 		}
-		
+	
 		// Free up stuff not needed afterward.
 		g_object_unref(file);
 	}
 	g_object_unref(dialog);
+
+    // small hack to free up params from the tab page close event.
+    if(params->toast_overlay == NULL){
+        adw_tab_view_close_page_finish(params->tab_view, page.page, true);
+        free(params);
+    }
 }
 
 static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
@@ -209,13 +234,12 @@ static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* fi
     tab_page = adw_tab_view_append(tab_view, scroller);
     adw_tab_page_set_title(tab_page, title);
     adw_tab_page_set_icon(tab_page, g_themed_icon_new("text-x-generic-symbolic"));
-	
+
     rtrn.page = tab_page;
     rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
 	// stores the file path to the heap for this specific tab page (calls on g_free when
 	// the tab page is destroyed).
 	g_object_set_data_full(G_OBJECT(rtrn.page), "file_path", g_strdup(filePath), (GDestroyNotify) g_free);
-   
 	return rtrn;
 }
 static Page get_active_page(AdwTabView* tab_view) {
@@ -233,6 +257,125 @@ static Page get_active_page(AdwTabView* tab_view) {
 	return rtrn;
 }
 
+// TODO: Come back to this later to find a more efficient way of detecting
+// whether a file has been edited or not.
+/// Handler for closing a tab page.
+static gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window){
+    
+    Page curr_page = get_active_page(tab_view);
+    const char* file_name = adw_tab_page_get_title(curr_page.page);
+    const char* file_path = g_object_get_data(G_OBJECT(curr_page.page), "file_path");
+    
+    // Getting current content and char count from the text view 
+    GtkTextBuffer* buffer = curr_page.buffer;
+	GtkTextIter start, end;
+	gtk_text_buffer_get_bounds(buffer, &start, &end);
+	char* contentBuffer = gtk_text_buffer_get_text(buffer, &start, &end, false);
+	//gsize lengthBuffer = gtk_text_buffer_get_char_count(buffer);
+    gsize lengthBuffer = strlen(contentBuffer);
+
+    int is_buffer_edited = 0;
+
+    // If in existing file
+    if(file_path != NULL){
+        // Getting content from the actual file itself
+	    GFile* file = g_file_new_for_path(file_path);    
+        char* contentFile;
+        gsize lengthFile;
+        GError* error;
+        if(!g_file_load_contents(file, NULL, &contentFile, &lengthFile, NULL, &error)){
+            printf("Error opening file \"%s\": %s\n", file_path, error->message);
+            free(error);
+            exit(0);
+        }
+        
+        // Comparing current text view content with file content
+        // to see if edited.
+        // Short circuits if the length of the text view content and file
+        // are not the same. Otherwise, has to do a O(N) check to see if
+        // the files are the same.
+        if(lengthFile != lengthBuffer || strcmp(contentBuffer, contentFile) != 0){
+            is_buffer_edited = 1;
+        }
+        
+        free(contentFile);
+    }
+    // We're in untitled documents right here. So long as length does
+    // equal 0, no need for a message dialog. 
+    else{
+        if(lengthBuffer != 0){
+            is_buffer_edited = 1;
+        }
+    }
+    
+    // Prompt user with if they want to cancel closing the tab, closing the
+    // tab even with unsaved changes, or save the content in the tab.
+    if(is_buffer_edited){
+        AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(adw_message_dialog_new(GTK_WINDOW(window), "Save File?", NULL));
+
+        adw_message_dialog_format_body(ADW_MESSAGE_DIALOG(dialog), "There are unsaved changes in %s.",
+                                       file_name);
+
+        adw_message_dialog_add_responses(ADW_MESSAGE_DIALOG(dialog), "cancel", "Cancel", "close", "Close", 
+                                         "save", "Save", NULL);
+
+        adw_message_dialog_set_response_appearance(ADW_MESSAGE_DIALOG(dialog), "save",
+                                                   ADW_RESPONSE_SUGGESTED);
+
+        adw_message_dialog_set_response_appearance(ADW_MESSAGE_DIALOG(dialog), "close",
+                                                   ADW_RESPONSE_DESTRUCTIVE);
+        
+        
+        adw_message_dialog_set_default_response(ADW_MESSAGE_DIALOG(dialog), "cancel");
+        adw_message_dialog_set_close_response(ADW_MESSAGE_DIALOG(dialog), "cancel");
+
+        FileClickParams* params = malloc(sizeof(FileClickParams));
+        params->window = GTK_WINDOW(dialog);
+        params->tab_view = ADW_TAB_VIEW(tab_view);
+        params->toast_overlay = NULL;
+
+        gtk_window_set_modal(GTK_WINDOW(dialog), true);
+        gtk_window_set_transient_for(GTK_WINDOW(dialog), window);
+        gtk_window_set_resizable(GTK_WINDOW(dialog), false);
+        
+        // Instead of using g_signal_connect and gtk_window_present
+        // This method allows for an async call on the desired function.
+        adw_message_dialog_choose(ADW_MESSAGE_DIALOG(dialog), NULL, (GAsyncReadyCallback) close_unsaved_tab_response, params);
+    }
+    // Close the tab if nothing's changed.
+    else{
+        adw_tab_view_close_page_finish(tab_view, curr_page.page, true);
+    }
+
+    // This return value prevents default handlers from being called on
+    // ^Took me forever to figure this out.
+    return GDK_EVENT_STOP;
+}
+
+/// Handles response receive from the close tab page message dialog.
+static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* result, FileClickParams* params){
+    
+    const char* response = adw_message_dialog_choose_finish(dialog, result);
+    Page curr_page = get_active_page(params->tab_view);
+    
+    // save response
+    if(strcmp(response, "save") == 0){
+        // free params in the save_file_response method.
+        save_file_click(NULL, params);
+    }
+    // close response
+    else if(strcmp(response, "close") == 0){ 
+        adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), true);
+        free(params);
+    }
+    // cancel response
+    else if(strcmp(response, "cancel") == 0){
+        adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), false);
+        free(params);
+    }
+}
+
+
 void main_window(GtkApplication *app) {
     Widget window,
         window_box,
@@ -243,6 +386,7 @@ void main_window(GtkApplication *app) {
                 file_save,
                 // folder_open,
                 share_toggle,
+            label,
             tabbar,
             toast_overlay,
                 tab_view,
@@ -278,18 +422,28 @@ void main_window(GtkApplication *app) {
     gtk_widget_set_tooltip_text(file_save, "Save File");
 	g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
 	adw_header_bar_pack_start(ADW_HEADER_BAR(headerbar), file_save);
-
+    
+    label = gtk_label_new("Create a new file or open a file");
+    gtk_widget_set_vexpand(label, true);
+    gtk_widget_set_size_request(label, CONTENT_MIN_WIDTH, CONTENT_MIN_HEIGHT);
+    gtk_label_set_yalign(GTK_LABEL(label), CONTENT_MIN_HEIGHT/2);
+     
     tab_view = GTK_WIDGET(adw_tab_view_new());
     gtk_widget_set_vexpand(tab_view, true);
     gtk_widget_set_size_request(tab_view, CONTENT_MIN_WIDTH, CONTENT_MIN_HEIGHT);
     tabbar = GTK_WIDGET(adw_tab_bar_new());
     adw_tab_view_set_default_icon(ADW_TAB_VIEW(tab_view), g_themed_icon_new("text-x-generic-symbolic"));
+    gtk_widget_set_visible(tabbar, false);
     adw_tab_bar_set_view(ADW_TAB_BAR(tabbar), ADW_TAB_VIEW(tab_view));
+    g_signal_connect(tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
+    //g_signal_handler_block(tab_view, SIGNAL_CLOSE_PAGE);
 
     toast_overlay = adw_toast_overlay_new();
     adw_toast_overlay_set_child(ADW_TOAST_OVERLAY(toast_overlay), tab_view);
 
     file_click_params->window = GTK_WINDOW(window);
+    file_click_params->label = GTK_LABEL(label);
+    file_click_params->tabbar = ADW_TAB_BAR(tabbar);
     file_click_params->tab_view = ADW_TAB_VIEW(tab_view);
     file_click_params->toast_overlay = ADW_TOAST_OVERLAY(toast_overlay);
 
@@ -307,6 +461,7 @@ void main_window(GtkApplication *app) {
 
     window_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_append(GTK_BOX(window_box), headerbar);
+    gtk_box_append(GTK_BOX(window_box), label);
     gtk_box_append(GTK_BOX(window_box), tabbar);
     gtk_box_append(GTK_BOX(window_box), toast_overlay);
     gtk_box_append(GTK_BOX(window_box), action_bar);
