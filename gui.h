@@ -21,6 +21,10 @@ typedef struct {
 typedef struct {
     /// Reference to the main-window so it can attach to it as modal.
     GtkWindow* window;
+    /// Reference to the default label when no tabs exist.
+    GtkLabel* label;
+    /// Reference to the tab bar.
+    AdwTabBar* tabbar;
     /// Reference to the tabview to create a new tab with the file content.
     AdwTabView* tab_view;
     /// Reference to the overlay to show Toasts.
@@ -43,7 +47,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 /// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
 /// That same ptr should be freed only when the program terminates.
 static void open_file_click(GtkButton* button, FileClickParams* params);
-static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view);
+static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params);
 /// Refer to `open_file_click()` about *params*.
 static void save_file_click(GtkButton* button, FileClickParams* params);
 /// Writes the Buffer of the current TabPage, and sets the Tab title if was a new file.
@@ -56,6 +60,14 @@ static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* fi
 /// Returns an alternative `Page` struct which references the AdwTabPage and TextBuffer of the current Tab.
 /// Returns NULL if there are no tabs in the TabView.
 static Page get_active_page(AdwTabView* tab_view);
+
+/// Handles the close-page signal from closing a tab page. 
+/// Will prompt the user with a message dialog whether they want to cancel
+/// closing the tab, close the tab, or save the content from the tab if
+/// there exist unsaved content.
+static gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window);
+/// Handles the response received from the close tab page message dialog.
+static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* result, FileClickParams* params);
 
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);
