@@ -72,8 +72,8 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);
 
-/// Creates the inner UI for the dialog that allows user to activate sharing.
+/// Sets up signal callbacks for the entries of the dialog in the *builder*.
 /// Returns pointers to entries that will hold relevant values for hosting/connecting.
-ShareDialogEntries set_share_dialog_child(AdwMessageDialog* dialog);
+ShareDialogEntries share_dialog_entries(GtkBuilder* dialog_builder);
 
 #endif // __GUI_H__

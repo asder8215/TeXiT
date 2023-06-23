@@ -1,0 +1,3 @@
+.invalid-entry {
+    border-color: @error_color;
+}

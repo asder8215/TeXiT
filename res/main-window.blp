@@ -1,0 +1,54 @@
+using Gtk 4.0;
+using Gio 2.0;
+using Adw 1;
+
+Adw.ApplicationWindow main-window {
+    Box {
+        orientation: vertical;
+
+        Adw.HeaderBar {
+            title-widget: Adw.WindowTitle {
+                title: "Text Editor";
+            };
+
+            [start]
+            Button file-new {
+                Image { icon-name: "document-new-symbolic"; }
+                tooltip-text: "New File";
+            }
+            [start]
+            Button file-open {
+                Image { icon-name: "text-x-generic-symbolic"; }
+                tooltip-text: "Open File";
+            }
+            [start]
+            Button file-save {
+                Image { icon-name: "document-save-symbolic"; }
+                tooltip-text: "Save File";
+            }
+            [end]
+            // label set in program
+            ToggleButton share-toggle { label: "❌ Share";}
+        }
+
+        Adw.TabBar { view: tab-view; }
+
+        Adw.ToastOverlay toast-overlay {
+            Adw.TabView tab-view {
+                vexpand: true;
+                width-request: 400;
+                height-request: 200;
+                default-icon: Gio.ThemedIcon { name: "text-x-generic-symbolic"; };
+
+                // Will have scrollers with TextViews
+            }
+        }
+
+        ActionBar {
+            vexpand: false;
+
+            [start]
+            Label { label: "Share: Not connected"; }
+        }
+    }
+}

@@ -1,0 +1,39 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adw.MessageDialog dialog {
+    heading: "Start Sharing";
+    close-response: "cancel";
+    default-response: "cancel";
+    modal: true;
+    // Set transient for 'main-window' in `share_toggle_click()`
+    resizable: false;
+    responses [
+        // Why did Adwaita make the IDs a string instead of an int???
+        cancel: "Cancel" destructive,
+        host: "Host",
+        connect: "Connect"
+    ]
+
+    Box {
+        orientation: vertical;
+        // TODO: Use this or GtkSeparator
+        // spacing: 4;
+
+        Adw.PreferencesGroup {
+            title: "Host";
+            description: "Create a Share session for others to connect to";
+        
+            Adw.EntryRow host-port { title: "Port"; }
+        }
+        Separator { styles ["spacer"] }
+
+        Adw.PreferencesGroup {
+            title: "Connect";
+            description: "Connect to someone else's Share session";
+        
+            Adw.EntryRow connect-ip { title: "IP Address"; }
+            Adw.EntryRow connect-port { title: "Port"; }
+        }
+    }
+}
