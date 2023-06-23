@@ -61,6 +61,14 @@ static Page new_tab_page(AdwTabView* tab_view, const char* title, const char* fi
 /// Returns NULL if there are no tabs in the TabView.
 static Page get_active_page(AdwTabView* tab_view);
 
+/// Handles the close-page signal from closing a tab page. 
+/// Will prompt the user with a message dialog whether they want to cancel
+/// closing the tab, close the tab, or save the content from the tab if
+/// there exist unsaved content.
+static gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window);
+/// Handles the response received from the close tab page message dialog.
+static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* result, FileClickParams* params);
+
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);
 
