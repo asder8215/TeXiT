@@ -1,5 +1,5 @@
-#ifndef __TAB_PAGE_H__
-#define __TAB_PAGE_H__
+#ifndef __BUFFER_H__
+#define __BUFFER_H__
 
 #include <gtk/gtk.h>
 #include <adwaita.h>
@@ -23,4 +23,4 @@ G_END_DECLS
 
 // TODO: acc GtkBuffer::changed signal to set edited to `true` when user types
 
-#endif // __TAB_PAGE_H__
+#endif // __BUFFER_H__
