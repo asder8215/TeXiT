@@ -47,10 +47,6 @@ typedef struct {
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
 /// *params* is malloc-ed by `share_toggle_click()`, which is a callback, so *params* must be freed by this function.
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);
-/// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
-/// That same ptr should be freed only when the program terminates.
-static void open_file_click(GtkButton* button, FileClickParams* params);
-static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view);
 
 void main_window(GtkApplication *app);
 void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params);

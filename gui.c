@@ -65,45 +65,28 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 static void new_file_click(GtkButton* button, FileClickParams* params) {
     if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
         gtk_widget_set_visible(GTK_WIDGET(params->label), false);
-    }
-
-    new_tab_page(params->tab_view, "Untitled", NULL);
-
-    if(adw_tab_view_get_n_pages(params->tab_view) == 1){
         gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
     }
+    new_tab_page(params->tab_view, "Untitled", NULL);
 }
 
-
-static void open_file_click(GtkButton* button, FileClickParams* params) {
-    /*
-    if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
-        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
-    }
-    */
-    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
-        params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
-    );
-    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
-    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params->tab_view);
-    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
-}
-
-static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView* tab_view) {
+static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
     if (response == GTK_RESPONSE_ACCEPT) {
         GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
         const char* filePath = g_file_get_path(file);
-        EditorBuffer* buffer = new_tab_page(tab_view, g_file_get_basename(file), filePath).buffer;
+        EditorBuffer* buffer = new_tab_page(params->tab_view, g_file_get_basename(file), filePath).buffer;
 
         char* content;
-        gsize length;
         GError* error;
-        if (!g_file_load_contents(file, NULL, &content, &length, NULL, &error)) {
+        if (!g_file_load_contents(file, NULL, &content, NULL, NULL, &error)) {
             printf("Error opening file \"%s\": %s\n", filePath, error->message);
             free(error);
             exit(0);
         }
+        
+        // Replace the start label with the TabPage
+        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
+        gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
 
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
         g_object_unref(file);
@@ -112,8 +95,19 @@ static void open_file_response(GtkNativeDialog* dialog, int response, AdwTabView
 
     g_object_unref(dialog);
 }
+/// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
+/// That same ptr should be freed only when the program terminates.
+static void open_file_click(GtkButton* button, FileClickParams* params) {
+    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
+        params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
+    );
+    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
+    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
+    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params);
+    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
+}
 
-void save_file_click(GtkButton* button, FileClickParams* params) {
+static void save_file_click(GtkButton* button, FileClickParams* params) {
     // could be NULL if no tabs are open
     Page page = get_active_page(params->tab_view);
     if (page.page == NULL) {
