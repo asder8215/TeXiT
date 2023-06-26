@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=TeXiT
+Comment=A TeXt ediTor, just for fun :)
+Exec=texit
+Icon=accessories-text-editor
+Terminal=false
+Categories=Editor;Application;

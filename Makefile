@@ -1,4 +1,4 @@
-NAME = editor
+NAME = texit
 CC = gcc
 # TODO: WHY IS resources.c TWO TIMES
 C_FILES = $(wildcard *.c)

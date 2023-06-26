@@ -1,0 +1,46 @@
+#!/bin/bash
+
+install_type=""
+dir=""
+# If user did not run with install_type param, ask them 
+if [ -z "$1" ]; then
+    read -p "Install for 'one' or 'all' users?: " install_type
+    if [ "$install_type" == "one" ]; then
+        install_type="user"
+    elif [ "$install_type" == "all" ]; then
+        install_type="sys"
+    else
+        echo "Incorrect; choose 'one' or 'all' next time" >&2
+        exit 1
+    fi
+else
+    install_type="$1"
+fi
+
+make
+
+success=""
+if [ "$install_type" == "sys" ]; then
+    dir="/usr/local"
+    sudo cp ./texit "$dir/bin/"\
+    && sudo cp ./TeXiT.desktop "$dir/share/applications/"\
+    && success="1"
+elif [ "$install_type" == "user" ]; then
+    dir="$HOME/.local"
+    cp ./texit "$dir/bin/"\
+    && cp ./TeXiT.desktop "$dir/share/applications/"\
+    && success="1"
+else
+    echo "Invalid install type; use 'sys' or 'user'" >&2
+    make clean
+    exit 1
+fi
+
+if [ -z "$success" ]; then
+    echo "Failed to install" >&2
+else
+    echo "Installed in $dir"
+fi
+
+make clean
+
