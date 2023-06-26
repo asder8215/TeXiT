@@ -1,5 +1,8 @@
-# [Title of App WIP]
-This is a simple text editor built in C, utilizing GTK4 and Libadwaita packages.
+# App Name: TeXiT
+This is a simple text editor built in C, utilizing GTK4, Libadwaita, and Blueprint Compiler packages. 
+The main motivation behind the text editor is purely educational.
+We wanted to build an editor that, at the end, involves live editing with multiple individuals. To do it in C was an extra challenge for us.
+Although live editing is not implemented into our application as of now, we still intend to develop that into our application.
 
 # Demo of App
 

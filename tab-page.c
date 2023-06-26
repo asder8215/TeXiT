@@ -6,7 +6,7 @@
 Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
     Widget scroller, text_view;
     Page rtrn;
-    rtrn.buffer = editor_buffer_new(NULL);
+    rtrn.buffer = editor_buffer_new(filePath);
     
     scroller = gtk_scrolled_window_new();
     text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));

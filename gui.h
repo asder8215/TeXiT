@@ -22,6 +22,10 @@ typedef struct {
 typedef struct {
     /// Reference to the main-window so it can attach to it as modal.
     GtkWindow* window;
+    /// Reference to the initial label when no tabs exist on the editor.
+    GtkLabel* label;
+    /// Reference to the tabbar to set visibility for it.
+    AdwTabBar* tabbar;
     /// Reference to the tabview to create a new tab with the file content.
     AdwTabView* tab_view;
     /// Reference to the overlay to show Toasts.
