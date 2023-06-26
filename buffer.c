@@ -88,27 +88,38 @@ static void write_file(GFile* file, GtkTextBuffer* buffer) {
 }
 
 typedef struct {
-    AdwTabPage* current_page;
+    AdwTabView* tab_view;
     EditorBuffer* buffer;
+    bool close_tab;
 } SaveResponseParams;
 
 static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveResponseParams* params) {
     GFile* file = gtk_file_dialog_save_finish(dialog, result, NULL);
-    // User cancelled if file is NULL
-    if (file != NULL) {
+    AdwTabPage* current_page = adw_tab_view_get_selected_page(params->tab_view);
+    
+    if (file == NULL) {
+        // User cancelled FileDialog
+        // Do not close tab
+        if (params->close_tab)
+            adw_tab_view_close_page_finish(params->tab_view, current_page, false);
+    } else {
+        // File was saved
         write_file(file, &params->buffer->parent);
-
         // Set tab title
-        adw_tab_page_set_title(params->current_page, g_file_get_basename(file));
+        adw_tab_page_set_title(current_page, g_file_get_basename(file));
         // Set Buffer file_path
         params->buffer->file_path = g_file_get_path(file);
+        
+        // Close tab
+        if (params->close_tab)
+            adw_tab_view_close_page_finish(params->tab_view, current_page, true);
     }
 
     g_object_unref(dialog);
     free(params);
 }
 
-void editor_buffer_save(EditorBuffer* self, AdwTabPage* current_page, GtkWindow* parent_window) {
+void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* parent_window, bool close_tab) {
     if (self->file_path == NULL) {
         // We're in a completely new file, ask user where to save.
         GtkFileDialog* dialog = gtk_file_dialog_new();
@@ -119,8 +130,9 @@ void editor_buffer_save(EditorBuffer* self, AdwTabPage* current_page, GtkWindow*
 
         // Freed in `save_response()`
         SaveResponseParams* params = malloc(sizeof(SaveResponseParams));
-        params->current_page = current_page;
+        params->tab_view = tab_view;
         params->buffer = self;
+        params->close_tab = close_tab;
         gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(save_response), params);
         return;
     }
