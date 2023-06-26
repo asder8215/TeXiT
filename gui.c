@@ -63,19 +63,15 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
-    /*
     if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
         gtk_widget_set_visible(GTK_WIDGET(params->label), false);
     }
-    */
 
     new_tab_page(params->tab_view, "Untitled", NULL);
 
-    /*
     if(adw_tab_view_get_n_pages(params->tab_view) == 1){
-        gtk_widget_set_visible(GTK_WIDGET(params->tabbar), true);
+        gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
     }
-    */
 }
 
 
@@ -140,6 +136,8 @@ void main_window(GtkApplication *app) {
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
 
     file_click_params->window = window;
+    file_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
+    file_click_params->tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
     file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
     file_click_params->toast_overlay = ADW_TOAST_OVERLAY(gtk_builder_get_object(builder, "toast-overlay"));
 
