@@ -6,6 +6,14 @@ Although live editing is not implemented into our application as of now, we stil
 
 # Demo of App
 
+# Install
+Run the [install script](./install): `./install sys` to install it for all users (`/usr/local/`), or `./install user` for just your user (`~/.local/`). Make sure to have all the [build dependencies](#build-dependencies) installed.
+
+# Build Dependencies
+ - ## Blueprint
+    - Builds `.blp` files into `.ui` files that can be used by GtkBuilder. Install it [here](https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/setup.html)
+
+
 # Language Server (IDE)
 
 If using `neovim` or `vscode`, clangd will need the file `compile_commands.json` to find gtk4 libraries.
