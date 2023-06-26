@@ -124,7 +124,7 @@ void save_file_click(GtkButton* button, FileClickParams* params) {
         adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("No documents are open"));
         return;
     }
-    editor_buffer_save(page.buffer, page.page, params->window);
+    editor_buffer_save(page.buffer, params->tab_view, params->window, false);
 }
 
 

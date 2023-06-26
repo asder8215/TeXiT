@@ -41,7 +41,7 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
     
     // save response
     if (strcmp(response, "save") == 0)
-        editor_buffer_save(curr_page.buffer, curr_page.page, params->window);
+        editor_buffer_save(curr_page.buffer, params->tab_view, params->window, true);
     // close response
     else if (strcmp(response, "close") == 0) 
         adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), true);
