@@ -7,7 +7,7 @@ Although live editing is not implemented into our application as of now, we stil
 # Demo of App
 
 # Install
-Run the [install script](./install): `./install sys` to install it for all users (`/usr/local/`), or `./install user` for just your user (`~/.local/`). Make sure to have all the [build dependencies](#build-dependencies) installed.
+Run the [install script](./install): `./install sys` to install it for all users (`/usr/local/`), or `./install user` for just your user (`~/.local/`). To uninstall the application on `sys` and/or `user`, run `./install sys uninstall` and/or `./install user uninstall` respectively. Make sure to have all the [build dependencies](#build-dependencies) installed.
 
 # Build Dependencies
  - ## Blueprint
