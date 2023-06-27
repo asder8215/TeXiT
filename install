@@ -2,45 +2,81 @@
 
 install_type=""
 dir=""
-# If user did not run with install_type param, ask them 
+success=""
+
+# Usage message for the install script.
+function usg_msg() {
+cat << ENDOFTEXT
+Usage: ./install <'sys'|'user'> ['uninstall']
+    - sys: Installs TeXiT for every user (requires sudo).
+    - user: Installs TeXiT for the current user.
+    - uninstall: Uninstalls TeXiT for either 'sys' or 'user'.
+ENDOFTEXT
+}
+
+# Checking length of arguments when running ./install.
 if [ -z "$1" ]; then
-    read -p "Install for 'one' or 'all' users?: " install_type
-    if [ "$install_type" == "one" ]; then
-        install_type="user"
-    elif [ "$install_type" == "all" ]; then
-        install_type="sys"
-    else
-        echo "Incorrect; choose 'one' or 'all' next time" >&2
-        exit 1
-    fi
+    usg_msg
+    exit 0
+elif [ $# -gt 2 ]; then
+    echo "Error: Too many arguments." >&2
+    usg_msg
+    exit 1
 else
     install_type="$1"
 fi
 
-make
-
-success=""
-if [ "$install_type" == "sys" ]; then
-    dir="/usr/local"
-    sudo cp ./texit "$dir/bin/"\
-    && sudo cp ./TeXiT.desktop "$dir/share/applications/"\
-    && success="1"
-elif [ "$install_type" == "user" ]; then
-    dir="$HOME/.local"
-    cp ./texit "$dir/bin/"\
-    && cp ./TeXiT.desktop "$dir/share/applications/"\
-    && success="1"
-else
-    echo "Invalid install type; use 'sys' or 'user'" >&2
-    make clean
+# Error checking content of first and second argument.
+if [[ "$install_type" != "sys" ]] && [[ "$install_type" != "user" ]]; then
+    echo "Error: Invalid first argument." >&2
+    usg_msg
+    exit 1
+elif [[ ! -z "$2" ]] && [[ "$2" != "uninstall" ]]; then
+    echo "Error: Invalid second argument." >&2
+    usg_msg
     exit 1
 fi
 
-if [ -z "$success" ]; then
-    echo "Failed to install" >&2
+# Proceeding with either installing or uninstalling TeXiT.
+if [[ "$2" == "uninstall" ]]; then
+    if [[ "$install_type" == "sys" ]]; then
+        sudo rm "/usr/local/bin/texit" "/usr/local/share/applications/TeXiT.desktop"\
+        && success="1"
+    elif [[ "$install_type" == "user" ]]; then
+        rm "$HOME/.local/bin/texit" "$HOME/.local/share/applications/TeXiT.desktop"\
+        && success="1"
+    fi
 else
-    echo "Installed in $dir"
+    make
+    if [[ "$install_type" == "sys" ]]; then
+        dir="/usr/local"
+        sudo cp ./texit "$dir/bin/"\
+        && sudo cp ./TeXiT.desktop "$dir/share/applications/"\
+        && success="1"
+    elif [[ "$install_type" == "user" ]]; then
+        dir="$HOME/.local"
+        cp ./texit "$dir/bin/"\
+        && cp ./TeXiT.desktop "$dir/share/applications/"\
+        && success="1"
+    fi
+    make clean
 fi
 
-make clean
-
+# Error checking if the user has entered sudo correctly.
+if [ -z "$success" ]; then
+    if [[ "$2" == "uninstall" ]]; then
+        echo "Error: Failed to uninstall." >&2
+        exit 1
+    else 
+        echo "Error: Failed to install." >&2
+        exit 1
+    fi
+else
+    if [[ "$2" == "uninstall" ]]; then
+        echo "Uninstalled TeXiT."
+        exit 0
+    else 
+        echo "TeXiT installed in $dir."
+        exit 0
+    fi
+fi
