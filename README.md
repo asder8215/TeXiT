@@ -7,9 +7,12 @@ This is a simple text editor built in C, utilizing GTK4, Libadwaita, and Bluepri
 ![Demo of App](https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Demo%201.gif)
 ![Share Message Dialog](https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Share%20Message%20Dialog.png)
 
-<img src="https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Demo%201.gif" width="50%" height="50%" text-align="center" display="block">
-<img src="https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Share%20Message%20Dialog.png" width = "60%" height="60%" text-align="center" display="block">
-
+<p align="center">
+<img src="https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Demo%201.gif" width="50%" height="50%">
+</p>
+<p align="center">
+<img src="https://github.com/asder8215/Text-Editor/blob/Mahdi/readme_imgs/Share%20Message%20Dialog.png" width = "60%" height="60%">
+</p>
 So far our app contains:
 - New File, Open File, and Save File buttons.
 - Tabs to allow for more text files on the screen.
