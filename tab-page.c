@@ -41,6 +41,7 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
     
     // save response
     if (strcmp(response, "save") == 0)
+        // calls tab_view.close_page_finish(true) if file was successfully saved
         editor_buffer_save(curr_page.buffer, params->tab_view, params->window, true);
     // close response
     else if (strcmp(response, "close") == 0) 
@@ -48,6 +49,9 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
     // cancel response
     else if (strcmp(response, "cancel") == 0)
         adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), false);
+
+    if (adw_tab_view_get_n_pages(params->tab_view) == 0)
+        gtk_widget_set_visible(GTK_WIDGET(params->tab_view), false);
 
     free(params);
 }
@@ -138,6 +142,8 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     // Close the tab if nothing's changed.
     else{
         adw_tab_view_close_page_finish(tab_view, curr_page.page, true);
+        if (adw_tab_view_get_n_pages(tab_view) == 0)
+            gtk_widget_set_visible(GTK_WIDGET(tab_view), false);
     }
 
     // This return value prevents default handlers from being called on
