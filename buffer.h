@@ -13,7 +13,13 @@ G_DECLARE_FINAL_TYPE(EditorBuffer, editor_buffer, EDITOR, BUFFER, GtkTextBuffer)
 /// *file_path* is copied by this function, so it is only borrowed. Can be NULL.
 EditorBuffer* editor_buffer_new(const char* file_path);
 const char* editor_buffer_get_file_path(EditorBuffer* self);
+
+/// sets and gets the edited value of the buffer
 bool editor_buffer_get_edited(EditorBuffer* self);
+void editor_buffer_set_edited(EditorBuffer* self, bool value);
+
+/// To get the buffer associated with the EditorBuffer
+GtkTextBuffer* editor_buffer_get_parent(EditorBuffer* self);
 
 /// Saves the contents of *self* to the file at *self.file_path*, overwriteing the file.
 /// Gets the *current_page* (the one this buffer is in) from **tab_view** and sets its title.
@@ -22,6 +28,12 @@ bool editor_buffer_get_edited(EditorBuffer* self);
 /// so this function will finish closing the page after file is saved.
 void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* parent_window, bool close_tab);
 
+/// To set and get the tab page associated with the buffer
+AdwTabPage* editor_buffer_get_page(EditorBuffer* self);
+void set_editor_buffer_page(EditorBuffer* buffer, AdwTabPage* tab_page);
+
+// To set whether the buffer has had its content changed.
+void set_editor_buffer_changed_signal(EditorBuffer* buffer, GtkTextBuffer* parent);
 G_END_DECLS
 
 // TODO: acc GtkBuffer::changed signal to set edited to `true` when user types

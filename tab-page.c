@@ -9,12 +9,16 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
     rtrn.buffer = editor_buffer_new(filePath);
     
     scroller = gtk_scrolled_window_new();
-    text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
+    //text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
+    text_view = gtk_text_view_new_with_buffer(editor_buffer_get_parent(rtrn.buffer));
     rtrn.page = adw_tab_view_append(tab_view, scroller);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
 
     adw_tab_page_set_title(rtrn.page, title);
     adw_tab_page_set_icon(rtrn.page, g_themed_icon_new("text-x-generic-symbolic"));
+    
+    set_editor_buffer_page(rtrn.buffer, rtrn.page);
+    set_editor_buffer_changed_signal(rtrn.buffer, gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view)));
 
 	return rtrn;
 }
@@ -57,18 +61,42 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
 /// Handler for closing a tab page.
 gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window) {
     Page curr_page = get_active_page(tab_view);
-    const char* file_name = adw_tab_page_get_title(curr_page.page);
+    
+    
+    //const char* file_name = adw_tab_page_get_title(curr_page.page);
     const char* file_path = editor_buffer_get_file_path(curr_page.buffer);
+    
+    GFile* file;
+    if(file_path != NULL){
+        file = g_file_new_for_path(file_path);
+    }
+    else{
+        file = NULL;
+    }
+    const char* file_name;
 
+    if(file != NULL){
+        file_name = g_file_get_basename(file);
+    }
+    else{
+        file_name = "Untitled";
+    }
+
+    /**
     // Getting current content and char count from the text view 
 	GtkTextIter start, end;
 	gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(curr_page.buffer), &start, &end);
 	char* contentBuffer = gtk_text_buffer_get_text(GTK_TEXT_BUFFER(curr_page.buffer), &start, &end, false);
 	//gsize lengthBuffer = gtk_text_buffer_get_char_count(buffer);
     gsize lengthBuffer = strlen(contentBuffer);
-
+    
+    **/
     int is_buffer_edited = 0;
 
+    if(editor_buffer_get_edited(curr_page.buffer)){
+        is_buffer_edited = 1;
+    }
+    /**
     // If in existing file
     if(file_path != NULL){
         // Getting content from the actual file itself
@@ -100,6 +128,7 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
             is_buffer_edited = 1;
         }
     }
+    **/
     
     // Prompt user with if they want to cancel closing the tab, closing the
     // tab even with unsaved changes, or save the content in the tab.
