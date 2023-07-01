@@ -93,7 +93,6 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
         
         // Setting the edited value of buffer to false.
         editor_buffer_set_edited(buffer, false);
-        //Page page = get_active_page(params->tab_view);
         adw_tab_page_set_title(editor_buffer_get_page(buffer), g_file_get_basename(file));
         
         free(content);
