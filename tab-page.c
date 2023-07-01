@@ -11,6 +11,7 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
     rtrn.page = adw_tab_view_append(tab_view, scroller);
     rtrn.buffer = editor_buffer_new(filePath, rtrn.page);
     text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
 
     adw_tab_page_set_title(rtrn.page, title);
