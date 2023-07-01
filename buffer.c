@@ -8,6 +8,8 @@ struct _EditorBuffer {
     bool edited;
     /// Can be NULL.
     const char* file_path;
+    // associated tab_page for buffer
+    AdwTabPage* tab_page;
 };
 G_DEFINE_TYPE(EditorBuffer, editor_buffer, GTK_TYPE_TEXT_BUFFER)
 
@@ -42,18 +44,36 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
     // free(file_path_param_spec);
 }
 
+static void editor_buffer_changed(EditorBuffer* buffer){
+    if(!buffer->edited){
+        const char* tab_page_title = adw_tab_page_get_title(buffer->tab_page);
+        char* modified_title = NULL;
+        int len_tab_page_title = strlen(tab_page_title);
+        modified_title = malloc(len_tab_page_title + 2);
+        strcpy(modified_title, tab_page_title);
+        strcat(modified_title, "*");
+    
+        adw_tab_page_set_title(buffer->tab_page, (const char*) modified_title);
+        buffer->edited = true;
+
+        free(modified_title);
+    }
+}
+
 static void editor_buffer_init(EditorBuffer* self) {
     self->edited = false;
     self->file_path = NULL;
 }
 
-EditorBuffer* editor_buffer_new(const char* file_path) {
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page) {
     if (file_path != NULL)
         file_path = strdup(file_path);
     
     EditorBuffer* buffer = g_object_new(EDITOR_TYPE_BUFFER, NULL);
     buffer->edited = false;
     buffer->file_path = file_path;
+    buffer->tab_page = tab_page;
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), NULL);
     return buffer;
 }
 
@@ -63,6 +83,14 @@ const char* editor_buffer_get_file_path(EditorBuffer* self) {
 }
 bool editor_buffer_get_edited(EditorBuffer* self) {
     return self->edited;
+}
+
+void editor_buffer_set_edited(EditorBuffer* self, bool value){
+    self->edited = value;
+}
+
+AdwTabPage* editor_buffer_get_page(EditorBuffer* self){
+    return self->tab_page;
 }
 
 // Takes ownership of *file*. *buffer* is a reference.
