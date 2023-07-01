@@ -37,13 +37,6 @@ typedef struct {
     FileClickParams* file_click_params;
 } MainMalloced;
 
-/*
-typedef struct {
-    AdwTabPage* page;
-    EditorBuffer* buffer;
-} Page;
-*/
-
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
 /// *params* is malloc-ed by `share_toggle_click()`, which is a callback, so *params* must be freed by this function.
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);

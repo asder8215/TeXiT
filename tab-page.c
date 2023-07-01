@@ -58,8 +58,6 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
 gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window) {
     Page curr_page = get_active_page(tab_view);
     
-    
-    //const char* file_name = adw_tab_page_get_title(curr_page.page);
     const char* file_path = editor_buffer_get_file_path(curr_page.buffer);
     
     GFile* file;
@@ -70,61 +68,20 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
         file = NULL;
     }
     const char* file_name;
-
+    
+    // file_name utilized for the close tab message dialog
     if(file != NULL){
         file_name = g_file_get_basename(file);
     }
     else{
         file_name = "Untitled";
     }
-
-    /**
-    // Getting current content and char count from the text view 
-	GtkTextIter start, end;
-	gtk_text_buffer_get_bounds(GTK_TEXT_BUFFER(curr_page.buffer), &start, &end);
-	char* contentBuffer = gtk_text_buffer_get_text(GTK_TEXT_BUFFER(curr_page.buffer), &start, &end, false);
-	//gsize lengthBuffer = gtk_text_buffer_get_char_count(buffer);
-    gsize lengthBuffer = strlen(contentBuffer);
     
-    **/
+    // utilizes the edited var boolean in editor buffer to check if the buffer is changed or not.
     int is_buffer_edited = 0;
-
     if(editor_buffer_get_edited(curr_page.buffer)){
         is_buffer_edited = 1;
     }
-    /**
-    // If in existing file
-    if(file_path != NULL){
-        // Getting content from the actual file itself
-	    GFile* file = g_file_new_for_path(file_path);    
-        char* contentFile;
-        gsize lengthFile;
-        GError* error;
-        if(!g_file_load_contents(file, NULL, &contentFile, &lengthFile, NULL, &error)){
-            printf("Error opening file \"%s\": %s\n", file_path, error->message);
-            free(error);
-            exit(0);
-        }
-        
-        // Comparing current text view content with file content
-        // to see if edited.
-        // Short circuits if the length of the text view content and file
-        // are not the same. Otherwise, has to do a O(N) check to see if
-        // the files are the same.
-        if(lengthFile != lengthBuffer || strcmp(contentBuffer, contentFile) != 0){
-            is_buffer_edited = 1;
-        }
-        
-        free(contentFile);
-    }
-    // We're in untitled documents right here. So long as length does
-    // equal 0, no need for a message dialog. 
-    else{
-        if(lengthBuffer != 0){
-            is_buffer_edited = 1;
-        }
-    }
-    **/
     
     // Prompt user with if they want to cancel closing the tab, closing the
     // tab even with unsaved changes, or save the content in the tab.
