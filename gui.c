@@ -14,6 +14,8 @@ static const char* SHARE_RESPONSE_CONNECT = "connect";
 static const unsigned int CONTENT_MIN_WIDTH = 400;
 static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
+// test comment
+
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
     if (gtk_toggle_button_get_active(toggle)) {
