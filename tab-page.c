@@ -6,19 +6,15 @@
 Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
     Widget scroller, text_view;
     Page rtrn;
-    rtrn.buffer = editor_buffer_new(filePath);
     
     scroller = gtk_scrolled_window_new();
-    //text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
-    text_view = gtk_text_view_new_with_buffer(editor_buffer_get_parent(rtrn.buffer));
+    text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
     rtrn.page = adw_tab_view_append(tab_view, scroller);
+    rtrn.buffer = editor_buffer_new(filePath, rtrn.page);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
 
     adw_tab_page_set_title(rtrn.page, title);
     adw_tab_page_set_icon(rtrn.page, g_themed_icon_new("text-x-generic-symbolic"));
-    
-    set_editor_buffer_page(rtrn.buffer, rtrn.page);
-    set_editor_buffer_changed_signal(rtrn.buffer, gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view)));
 
 	return rtrn;
 }

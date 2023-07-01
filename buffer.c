@@ -44,18 +44,36 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
     // free(file_path_param_spec);
 }
 
+static void editor_buffer_changed(EditorBuffer* buffer){
+    if(!buffer->edited){
+        const char* tab_page_title = adw_tab_page_get_title(buffer->tab_page);
+        char* modified_title = NULL;
+        int len_tab_page_title = strlen(tab_page_title);
+        modified_title = malloc(len_tab_page_title + 2);
+        strcpy(modified_title, tab_page_title);
+        strcat(modified_title, "*");
+    
+        adw_tab_page_set_title(buffer->tab_page, (const char*) modified_title);
+        buffer->edited = true;
+
+        free(modified_title);
+    }
+}
+
 static void editor_buffer_init(EditorBuffer* self) {
     self->edited = false;
     self->file_path = NULL;
 }
 
-EditorBuffer* editor_buffer_new(const char* file_path) {
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page) {
     if (file_path != NULL)
         file_path = strdup(file_path);
     
     EditorBuffer* buffer = g_object_new(EDITOR_TYPE_BUFFER, NULL);
     buffer->edited = false;
     buffer->file_path = file_path;
+    buffer->tab_page = tab_page;
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), NULL);
     return buffer;
 }
 
@@ -71,8 +89,8 @@ void editor_buffer_set_edited(EditorBuffer* self, bool value){
     self->edited = value;
 }
 
-GtkTextBuffer* editor_buffer_get_parent(EditorBuffer* self){
-    return &self->parent;
+AdwTabPage* editor_buffer_get_page(EditorBuffer* self){
+    return self->tab_page;
 }
 
 // Takes ownership of *file*. *buffer* is a reference.
@@ -150,32 +168,4 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
     // Using an exisitng file, overwrite it.
     GFile* file = g_file_new_for_path(self->file_path);
     write_file(file, &self->parent);
-}
-
-AdwTabPage* editor_buffer_get_page(EditorBuffer* self){
-    return self->tab_page;
-}
-
-void set_editor_buffer_page(EditorBuffer* buffer, AdwTabPage* tab_page){
-    buffer->tab_page = tab_page;
-}
-
-static void editor_buffer_changed(GtkTextBuffer* buffer, EditorBuffer* editor_buffer){
-    if(!editor_buffer->edited){
-        const char* tab_page_title = adw_tab_page_get_title(editor_buffer->tab_page);
-        char* modified_title = NULL;
-        int len_tab_page_title = strlen(tab_page_title);
-        modified_title = malloc(len_tab_page_title + 2);
-        strcpy(modified_title, tab_page_title);
-        strcat(modified_title, "*");
-    
-        adw_tab_page_set_title(editor_buffer->tab_page, (const char*) modified_title);
-        editor_buffer->edited = true;
-
-        free(modified_title);
-    }
-}
-
-void set_editor_buffer_changed_signal(EditorBuffer* buffer, GtkTextBuffer* parent){
-    g_signal_connect(parent, "changed", G_CALLBACK(editor_buffer_changed), buffer);
 }
