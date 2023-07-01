@@ -22,7 +22,7 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
 
         // ~~Freed by `share_enable_response()`.~~
         // Gives error when `g_free(builder), even though it should be freed accroding to https://docs.gtk.org/gtk4/ctor.Builder.new_from_resource.html
-        GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/share-dialog.ui");
+        GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/share-dialog.ui");
         AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(gtk_builder_get_object(builder, "dialog"));
         ShareDialogEntries entries = share_dialog_entries(builder);
         // C moment :( Why must it be done like this
@@ -119,7 +119,7 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
 
 
 void main_window(AdwApplication *app) {
-    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/main-window.ui");
+    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/main-window.ui");
 
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/me/Asder8215/TextEditor">
+  <gresource prefix="/me/Asder8215/TeXiT">
     <file>main-window.ui</file>
     <file>share-dialog.ui</file>
     <file>style.css</file>
