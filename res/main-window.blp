@@ -37,10 +37,13 @@ Adw.ApplicationWindow main-window {
             width-request: 400;
             height-request: 200;
             valign: center;
+            visible: true;
         }
 
         Adw.TabBar tab-bar{ 
             view: tab-view;
+            autohide: false;
+            visible: bind tab-view.visible;
         }
 
         Adw.ToastOverlay toast-overlay {
@@ -48,7 +51,7 @@ Adw.ApplicationWindow main-window {
                 vexpand: true;
                 width-request: 400;
                 height-request: 200;
-                visible: false;
+                visible: bind-property label.visible inverted bidirectional;
                 default-icon: Gio.ThemedIcon { name: "text-x-generic-symbolic"; };
                 // Will have scrollers with TextViews
             }

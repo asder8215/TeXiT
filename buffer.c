@@ -141,6 +141,8 @@ static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveRespo
         // Close tab
         if (params->close_tab)
             adw_tab_view_close_page_finish(params->tab_view, current_page, true);
+        if (adw_tab_view_get_n_pages(params->tab_view) == 0)
+            gtk_widget_set_visible(GTK_WIDGET(params->tab_view), false);
     }
 
     g_object_unref(dialog);
