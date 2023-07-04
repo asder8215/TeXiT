@@ -129,7 +129,6 @@ static void setting_click(GtkButton* setting_btn, GtkWindow* window){
     gtk_window_present(GTK_WINDOW(prefs_window));
 }
 
-
 void main_window(AdwApplication *app) {
     GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/main-window.ui");
     //GtkBuilder* settings_builder = gtk_builder_new_from_resource("me/Asder8215/TextEditor/setting.ui");
