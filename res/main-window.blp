@@ -29,6 +29,11 @@ Adw.ApplicationWindow main-window {
             [end]
             // label set in program
             ToggleButton share-toggle { label: "❌ Share";}
+            [end]
+            Button setting-btn {
+                Image { icon-name: "emblem-system-symbolic"; }
+                tooltip-text: "Setting";
+            }
         }
 
         Gtk.Label label{

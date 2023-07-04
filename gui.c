@@ -22,7 +22,7 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
 
         // ~~Freed by `share_enable_response()`.~~
         // Gives error when `g_free(builder), even though it should be freed accroding to https://docs.gtk.org/gtk4/ctor.Builder.new_from_resource.html
-        GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/share-dialog.ui");
+        GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/share-dialog.ui");
         AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(gtk_builder_get_object(builder, "dialog"));
         ShareDialogEntries entries = share_dialog_entries(builder);
         // C moment :( Why must it be done like this
@@ -122,19 +122,26 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
     editor_buffer_save(page.buffer, params->tab_view, params->window, false);
 }
 
+static void setting_click(GtkButton* setting_btn, GtkWindow* window){
+    GtkBuilder* settings_builder = gtk_builder_new_from_resource("me/Asder8215/TeXiT/setting.ui");
+    AdwPreferencesWindow* prefs_window = ADW_PREFERENCES_WINDOW(gtk_builder_get_object(settings_builder, "setting-dialog"));
+    gtk_window_set_transient_for(GTK_WINDOW(prefs_window), window);
+    gtk_window_present(GTK_WINDOW(prefs_window));
+}
 
-void main_window(GtkApplication *app) {
-    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TextEditor/main-window.ui");
 
+void main_window(AdwApplication *app) {
+    GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/main-window.ui");
+    //GtkBuilder* settings_builder = gtk_builder_new_from_resource("me/Asder8215/TextEditor/setting.ui");
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;
 
-    GtkWindow* window = GTK_WINDOW(gtk_builder_get_object(builder, "main-window"));
-    gtk_window_set_application(window, app);
+    AdwApplicationWindow* window = ADW_APPLICATION_WINDOW(gtk_builder_get_object(builder, "main-window"));
+    gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
     g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
 
-    file_click_params->window = window;
+    file_click_params->window = GTK_WINDOW(window);
     file_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
     file_click_params->tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
     file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
@@ -152,12 +159,17 @@ void main_window(GtkApplication *app) {
     GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
+    
+    GtkButton* setting_btn = GTK_BUTTON(gtk_builder_get_object(builder, "setting-btn"));
+    //GtkWindow* prefs_window = GTK_WINDOW(gtk_builder_get_object(builder, "setting-dialog"));
+    g_signal_connect(setting_btn, "clicked", G_CALLBACK(setting_click), window);
 
-    gtk_window_present(window);
+    gtk_window_present(GTK_WINDOW(window));
 }
 
-void main_window_destroy(GtkApplicationWindow* window, MainMalloced* params) {
+void main_window_destroy(AdwApplicationWindow* window, MainMalloced* params) {
     free(params->file_click_params);
+    free(params);
 }
 
 
