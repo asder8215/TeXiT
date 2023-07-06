@@ -17,8 +17,6 @@ Adw.MessageDialog dialog {
 
     Box {
         orientation: vertical;
-        // TODO: Use this or GtkSeparator
-        // spacing: 4;
 
         Adw.PreferencesGroup {
             title: "Host";
@@ -26,7 +24,7 @@ Adw.MessageDialog dialog {
         
             Adw.EntryRow host-port { title: "Port"; }
         }
-        Separator { styles ["spacer"] }
+        Separator { styles ["spacer"] margin-top: 16; }
 
         Adw.PreferencesGroup {
             title: "Connect";

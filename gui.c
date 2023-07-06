@@ -86,16 +86,14 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
         }
         
         // Replace the start label with the TabPage
-        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
+        // label is made invisible because the binding is bidierctional.
         gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
-
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
-        g_object_unref(file);
-        
-        // Setting the edited value of buffer to false.
+        // Set to false because `gtk_text_buffer_set_text()` emmits signal "changed".
         editor_buffer_set_edited(buffer, false);
         adw_tab_page_set_title(editor_buffer_get_page(buffer), g_file_get_basename(file));
         
+        g_object_unref(file);
         free(content);
     }
 
