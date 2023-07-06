@@ -28,11 +28,15 @@ Adw.ApplicationWindow main-window {
             }
             [end]
             // label set in program
-            ToggleButton share-toggle { label: "❌ Share";}
+            ToggleButton share-toggle {
+                label: "❌ Share";
+                // clicked => $share_toggle_click();
+            }
             [end]
             Button settings-btn {
                 Image { icon-name: "emblem-system-symbolic"; }
                 tooltip-text: "Settings";
+                clicked => $settings_click();
             }
         }
 
