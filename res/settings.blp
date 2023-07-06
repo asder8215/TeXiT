@@ -3,22 +3,13 @@ using Gio 2.0;
 using Adw 1;
 
 
-Gtk.StringList font-style-dropdown {
-    strings [ 
-        "None",
-        "Bold",
-        "Italic",
-        "Bold Italic"
-    ]
-}
-
 Adw.PreferencesWindow setting-dialog {
     Adw.PreferencesPage font-page {
         title: "Font";
-        Adw.PreferencesGroup font-group {
+        Adw.PreferencesGroup {
             title: "Font Customization";
             description: "These are all the font customizability options that TeXiT currently supports.";
-            Adw.ActionRow font-family-row {
+            Adw.ActionRow {
                 title: "Font Family and Size";
                 Gtk.FontDialogButton font-dialog {}
             }
@@ -26,15 +17,22 @@ Adw.PreferencesWindow setting-dialog {
             Adw.ComboRow font-style-row {
                 title: "Font Style";
                 subtitle: "Choose whether to display the text editor in bold, italic, bold italic, or none.";
-                model: font-style-dropdown;
+                model: Gtk.StringList {
+                    strings [ 
+                        "None",
+                        "Bold",
+                        "Italic",
+                        "Bold Italic"
+                    ]
+                };
             }
             Separator { styles ["spacer"] }
-            Adw.ActionRow ligature-row {
+            Adw.ActionRow {
                 title: "Ligature";
-                subtitle: "Merge symbols (e.g. <=, ae, >=)";
+                subtitle: "Merge symbols (e.g. <=, >=)";
                 use-markup: false;
-                Gtk.Grid ligature-grid {
-                    Gtk.Switch ligature-switch {
+                Gtk.Grid {
+                    Gtk.Switch ligatures-switch {
                         margin-top: 8;
                         height-request: 35;
                         width-request: 70;

@@ -150,9 +150,9 @@ void main_window(AdwApplication *app) {
     gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
     g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
     
-    GtkButton* setting_btn = GTK_BUTTON(gtk_builder_get_object(builder, "setting-btn"));
+    GtkButton* settings_btn = GTK_BUTTON(gtk_builder_get_object(builder, "settings-btn"));
     //GtkWindow* prefs_window = GTK_WINDOW(gtk_builder_get_object(builder, "setting-dialog"));
-    g_signal_connect(setting_btn, "clicked", G_CALLBACK(setting_click), window);
+    g_signal_connect(settings_btn, "clicked", G_CALLBACK(settings_click), window);
 
     gtk_window_present(GTK_WINDOW(window));
 }
