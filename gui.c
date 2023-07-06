@@ -122,7 +122,7 @@ static void save_file_click(GtkButton* button, FileClickParams* params) {
 
 void main_window(AdwApplication *app) {
     GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/main-window.ui");
-    //GtkBuilder* settings_builder = gtk_builder_new_from_resource("me/Asder8215/TextEditor/setting.ui");
+    
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;

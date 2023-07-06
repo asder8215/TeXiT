@@ -4,6 +4,9 @@ using Adw 1;
 
 
 Adw.PreferencesWindow setting-dialog {
+    default-width: 200;
+    default-height: 400;
+
     Adw.PreferencesPage font-page {
         title: "Font";
         Adw.PreferencesGroup {
@@ -31,12 +34,9 @@ Adw.PreferencesWindow setting-dialog {
                 title: "Ligature";
                 subtitle: "Merge symbols (e.g. <=, >=)";
                 use-markup: false;
-                Gtk.Grid {
-                    Gtk.Switch ligatures-switch {
-                        margin-top: 8;
-                        height-request: 35;
-                        width-request: 70;
-                    }
+                Gtk.Switch ligatures-switch {
+                    vexpand: false;
+                    valign: center;
                 }
             }
         }
