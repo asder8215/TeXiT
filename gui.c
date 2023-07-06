@@ -91,8 +91,7 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
         // Set to false because `gtk_text_buffer_set_text()` emmits signal "changed".
         editor_buffer_set_edited(buffer, false);
-        adw_tab_page_set_title(editor_buffer_get_page(buffer), g_file_get_basename(file));
-        
+        adw_tab_page_set_indicator_icon(editor_buffer_get_page(buffer), NULL);
         g_object_unref(file);
         free(content);
     }
