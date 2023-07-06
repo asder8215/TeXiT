@@ -44,19 +44,10 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
     // free(file_path_param_spec);
 }
 
-static void editor_buffer_changed(EditorBuffer* buffer){
-    if(!buffer->edited){
-        const char* tab_page_title = adw_tab_page_get_title(buffer->tab_page);
-        char* modified_title = NULL;
-        int len_tab_page_title = strlen(tab_page_title);
-        modified_title = malloc(len_tab_page_title + 2);
-        strcpy(modified_title, tab_page_title);
-        strcat(modified_title, "*");
-    
-        adw_tab_page_set_title(buffer->tab_page, (const char*) modified_title);
+static void editor_buffer_changed(EditorBuffer* buffer) {
+    if (!buffer->edited) {
+        adw_tab_page_set_indicator_icon(buffer->tab_page, g_themed_icon_new("media-record-symbolic"));
         buffer->edited = true;
-
-        free(modified_title);
     }
 }
 
@@ -137,6 +128,8 @@ static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveRespo
         adw_tab_page_set_title(current_page, g_file_get_basename(file));
         // Set Buffer file_path
         params->buffer->file_path = g_file_get_path(file);
+        // Remove unsaved indicator
+        adw_tab_page_set_indicator_icon(current_page, NULL);
         
         // Close tab
         if (params->close_tab)
