@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "buffer.h"
 #include "tab-page.h"
+#include "server.h"
 #include <stdio.h>
 #include <string.h>
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -45,19 +46,33 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
     // The response_id ptr will be different than that of any of the set response_ids in `share_toggle_click()`, dont know why. Must use `strcmp()`.
     // strcmp() == 0 when strings are equal.
     if (strcmp(response, SHARE_RESPONSE_HOST) == 0) {
-        const char* port = gtk_editable_get_text(params->entries.host_port);
+        int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
-        printf("Host with port %s\n", port);
+        printf("Host with port %d\n", port);
+        switch (start_server(port)) {
+            case Success:
+                gtk_button_set_label(params->toggle, SERVER_TOGGLE_ON_TITLE);
+            case InvalidPort: {
+                fprintf(stderr, "Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX);
+                // TODO: overlay
+            }
+            case BindError: {
+                // TODO:
+                fprintf(stderr, "Bind error...");
+                // TODO: overlay
+            }
+            case Other: {
+                fprintf(stderr, "Could not start Hosting for unknown reason\n");
+                // TODO: overlay
+            }
+        }
     } else if (strcmp(response, SHARE_RESPONSE_CONNECT) == 0) {
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
         const char* port = gtk_editable_get_text(params->entries.connect_port);
 
-        printf("Connect to %s with port %s\n", ip, port);
-    } else {
-        return;
+        printf("NOT IMPLEMENTED: Connect to %s with port %s\n", ip, port);
     }
-    // TODO: only change label if server start was successful.
-    gtk_button_set_label(params->toggle, SERVER_TOGGLE_ON_TITLE);
+
     free(params);
 }
 
