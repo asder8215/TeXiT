@@ -20,9 +20,6 @@ static const unsigned int CONTENT_MIN_HEIGHT = 200;
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
     printf("Toggle active: %s\n", gtk_toggle_button_get_active(toggle) ? "true" : "false");
     if (gtk_toggle_button_get_active(toggle)) {
-        // Deactivate toggle button. `share_enable_response()` should activate the toggle button if setup was successful.
-        gtk_toggle_button_set_active(toggle, false);
-
         // ~~Freed by `share_enable_response()`.~~
         // Gives error when `g_free(builder), even though it should be freed accroding to https://docs.gtk.org/gtk4/ctor.Builder.new_from_resource.html
         GtkBuilder* builder = gtk_builder_new_from_resource("/me/Asder8215/TeXiT/share-dialog.ui");
