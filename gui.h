@@ -15,6 +15,7 @@ typedef struct {
 
 typedef struct {
     GtkButton* toggle;
+    AdwToastOverlay* toast_overlay;
     ShareDialogEntries entries;
 } ShareEnableParams;
 
@@ -42,7 +43,7 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);
 
 void main_window(AdwApplication *app);
-void main_window_destroy(AdwApplicationWindow* window, MainMalloced* params);
+gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params);
 
 /// Sets up signal callbacks for the entries of the dialog in the *builder*.
 /// Returns pointers to entries that will hold relevant values for hosting/connecting.

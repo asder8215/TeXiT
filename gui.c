@@ -6,8 +6,9 @@
 #include <string.h>
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-static const char* SERVER_TOGGLE_ON_TITLE = "✔️ Share";
 static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
+static const char* SERVER_TOGGLE_HOSTING_TITLE = "✔️ Share";
+static const char* SERVER_TOGGLE_CONNECTED_TITLE = "✔️ Share";
 static const char* SHARE_RESPONSE_CANCEL = "cancel";
 static const char* SHARE_RESPONSE_HOST = "host";
 static const char* SHARE_RESPONSE_CONNECT = "connect";
@@ -17,6 +18,7 @@ static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
+    printf("Toggle active: %s\n", gtk_toggle_button_get_active(toggle) ? "true" : "false");
     if (gtk_toggle_button_get_active(toggle)) {
         // Deactivate toggle button. `share_enable_response()` should activate the toggle button if setup was successful.
         gtk_toggle_button_set_active(toggle, false);
@@ -37,6 +39,7 @@ static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window) {
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
+        stop_server();
         gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
     }
 }
@@ -48,29 +51,31 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
     if (strcmp(response, SHARE_RESPONSE_HOST) == 0) {
         int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
-        printf("Host with port %d\n", port);
+        printf("Starting host with port %d...\n", port);
         switch (start_server(port)) {
             case Success:
-                gtk_button_set_label(params->toggle, SERVER_TOGGLE_ON_TITLE);
-            case InvalidPort: {
+                printf("Host started successfully.\n");
+                gtk_button_set_label(params->toggle, SERVER_TOGGLE_HOSTING_TITLE);
+                break;
+            case AlreadyStarted:
+                fprintf(stderr, "Server is already running.\n");
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Server is already running"));
+                break;
+            case InvalidPort:
                 fprintf(stderr, "Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX);
-                // TODO: overlay
-            }
-            case BindError: {
-                // TODO:
-                fprintf(stderr, "Bind error...");
-                // TODO: overlay
-            }
-            case Other: {
-                fprintf(stderr, "Could not start Hosting for unknown reason\n");
-                // TODO: overlay
-            }
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Invalid port number"));
+                break;
+            case Other:
+                fprintf(stderr, "Could not start Hosting for the reason above.\n");
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Serrver not started. Check console output"));
+                break;
         }
     } else if (strcmp(response, SHARE_RESPONSE_CONNECT) == 0) {
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
         const char* port = gtk_editable_get_text(params->entries.connect_port);
 
         printf("NOT IMPLEMENTED: Connect to %s with port %s\n", ip, port);
+        gtk_button_set_label(params->toggle, SERVER_TOGGLE_CONNECTED_TITLE);
     }
 
     free(params);
@@ -145,7 +150,8 @@ void main_window(AdwApplication *app) {
 
     AdwApplicationWindow* window = ADW_APPLICATION_WINDOW(gtk_builder_get_object(builder, "main-window"));
     gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
-    g_signal_connect(window, "destroy", G_CALLBACK(main_window_destroy), malloced);
+    // TODO: when connected to signal "destroy", does not call handler???
+    g_signal_connect(GTK_WIDGET(window), "close-request", G_CALLBACK(main_window_destroy), malloced);
 
     file_click_params->window = GTK_WINDOW(window);
     file_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
@@ -164,14 +170,16 @@ void main_window(AdwApplication *app) {
 
     GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
-    g_signal_connect(share_toggle, "toggled", G_CALLBACK(share_toggle_click), window);
+    g_signal_connect(share_toggle, "clicked", G_CALLBACK(share_toggle_click), window);
 
     gtk_window_present(GTK_WINDOW(window));
 }
 
-void main_window_destroy(AdwApplicationWindow* window, MainMalloced* params) {
+gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params) {
+    stop_server();
     free(params->file_click_params);
     free(params);
+    return GDK_EVENT_PROPAGATE;
 }
 
 
