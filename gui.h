@@ -14,7 +14,12 @@ typedef struct {
 } ShareDialogEntries;
 
 typedef struct {
-    GtkButton* toggle;
+    GtkWindow* window;
+    AdwToastOverlay* toast_overlay;
+} ShareClickParams;
+
+typedef struct {
+    GtkToggleButton* toggle;
     AdwToastOverlay* toast_overlay;
     ShareDialogEntries entries;
 } ShareEnableParams;
@@ -36,9 +41,10 @@ typedef struct {
 /// Things that were heap-allocated in `main_window()` and must be freed when program terminates.
 typedef struct {
     FileClickParams* file_click_params;
+    ShareClickParams* share_click_params;
 } MainMalloced;
 
-static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
+static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params);
 /// *params* is malloc-ed by `share_toggle_click()`, which is a callback, so *params* must be freed by this function.
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);
 
