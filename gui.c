@@ -192,30 +192,32 @@ gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params)
 }
 
 
-/// Callback for when user presses Enter on the entry.
-/// Emtits the `response` signal with response_id "host".
-static void host_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
-        adw_message_dialog_response(dialog,SHARE_RESPONSE_HOST);
-}
-/// Callback for when user presses Enter on the entry.
-/// Shifts focus to the `connect_port` entry.
-static void connect_ip_activate(GtkEditable* entry, GtkEditable* connect_port) {
-    gtk_widget_grab_focus(GTK_WIDGET(connect_port));
-}
-/// Callback for when user presses Enter on the entry.
-/// Emtits the `response` signal with response_id "connect".
-static void connect_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
-    adw_message_dialog_response(dialog,SHARE_RESPONSE_CONNECT);
-}
+// /// Callback for when user presses Enter on the entry.
+// /// Emtits the `response` signal with response_id "host".
+// static void host_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
+//     // adw_message_dialog_response(dialog,SHARE_RESPONSE_HOST);
+//     g_signal_emit_by_name(dialog, "response", "host");
+// }
+// /// Callback for when user presses Enter on the entry.
+// /// Shifts focus to the `connect_port` entry.
+// static void connect_ip_activate(GtkEditable* entry, GtkEditable* connect_port) {
+//     gtk_widget_grab_focus(GTK_WIDGET(connect_port));
+// }
+// /// Callback for when user presses Enter on the entry.
+// /// Emtits the `response` signal with response_id "connect".
+// static void connect_port_activate(GtkEditable* entry, AdwMessageDialog* dialog) {
+//     adw_message_dialog_response(dialog,SHARE_RESPONSE_CONNECT);
+//     gtk_window_close(GTK_WINDOW(dialog));
+// }
 ShareDialogEntries share_dialog_entries(GtkBuilder* dialog_builder) {
     AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(gtk_builder_get_object(dialog_builder, "dialog"));
     GtkEditable* host_port = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "host-port"));
     GtkEditable* connect_ip = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "connect-ip"));
     GtkEditable* connect_port = GTK_EDITABLE(gtk_builder_get_object(dialog_builder, "connect-port"));
-    // Connect Entry callbacks for when user presses Enter
-    g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
-    g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
-    g_signal_connect(connect_port, "entry-activated", G_CALLBACK(connect_port_activate), dialog);
+    // // Connect Entry callbacks for when user presses Enter
+    // g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
+    // g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
+    // g_signal_connect(connect_port, "entry-activated", G_CALLBACK(connect_port_activate), dialog);
 
     ShareDialogEntries r = {
         GTK_EDITABLE(host_port),
