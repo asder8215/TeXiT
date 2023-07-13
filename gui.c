@@ -65,7 +65,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 break;
             case InvalidPort:
                 fprintf(stderr, "Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX);
-                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Invalid port. Must be between 1024 and 65535"));
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new_format("Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX));
                 break;
             case Other:
                 fprintf(stderr, "Could not start Hosting for the reason above.\n");

@@ -2,7 +2,7 @@
 #define __SERVER_H_
 
 #define PORT_MIN 1024
-#define PORT_MAX 65535
+#define PORT_MAX 49151
 
 typedef enum  {
     Success,
@@ -12,7 +12,7 @@ typedef enum  {
 } StartServerStatus;
 
 /// Tries to start a server using the provided port number.
-/// Port number must be between 1024 and 65535 (inclusive).
+/// Port number must be between 1024 and 49151 (inclusive).
 StartServerStatus start_server(int port);
 /// Wonder what this does ?
 void stop_server();
