@@ -29,6 +29,8 @@ StartStatus start_client(const char* ip_address, int port){
 
     if (error != NULL) {
         fprintf(stderr, "Error %d: %s\n", error->code, error->message);
+        g_object_unref(client);
+        client = NULL;
         return Other;
     }
     else {
@@ -41,7 +43,6 @@ StartStatus start_client(const char* ip_address, int port){
 
     if (error != NULL) {
         fprintf(stderr, "Error %d: %s\n", error->code, error->message);
-        return Other;
     }
 
     return Success;
@@ -50,18 +51,8 @@ StartStatus start_client(const char* ip_address, int port){
 void stop_client() {
     if (client != NULL) {
         printf("Stopping client.\n");
-        GError* error = NULL;
         GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-        g_output_stream_write(ostream, "Client left", 11, NULL, &error);
-        g_output_stream_close(ostream, NULL, &error);
-        if (error != NULL) {
-            fprintf(stderr, "Error %d: %s\n", error->code, error->message);
-        }
-        GInputStream* istream = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-        g_input_stream_close(istream, NULL, &error);
-        if (error != NULL) {
-            fprintf(stderr, "Error %d: %s\n", error->code, error->message);
-        }
+        g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
         g_object_unref(connection);
         g_object_unref(client);
         client = NULL;

@@ -40,7 +40,13 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), enable_params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
-        stop_server();
+        const char* title = gtk_button_get_label(GTK_BUTTON(toggle));
+        if(strcmp(title, SERVER_TOGGLE_HOSTING_TITLE) == 0){
+            stop_server();
+        }
+        else if(strcmp(title, SERVER_TOGGLE_CONNECTED_TITLE) == 0){
+            stop_client();
+        }
         gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
     }
 }
@@ -66,11 +72,11 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 break;
             case InvalidPort:
                 fprintf(stderr, "Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX);
-                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Invalid port. Must be between 1024 and 65535"));
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new_format("Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX));
                 break;
             case Other:
-                fprintf(stderr, "Could not start Hosting for the reason above.\n");
-                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Serrver not started. Check console output"));
+                fprintf(stderr, "Could not start hosting for the reason above.\n");
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Server not started. Check console output"));
                 break;
         }
     } else if (strcmp(response, SHARE_RESPONSE_CONNECT) == 0) {
@@ -94,7 +100,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Invalid port. Must be between 1024 and 65535"));
                 break;
             case Other:
-                fprintf(stderr, "Could not start Connecting for the reason above.\n");
+                fprintf(stderr, "Could not start connecting for the reason above.\n");
                 adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Client not started. Check console output"));
                 break;
         }
@@ -239,6 +245,10 @@ ShareDialogEntries share_dialog_entries(GtkBuilder* dialog_builder) {
     // g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
     // g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
     // g_signal_connect(connect_port, "entry-activated", G_CALLBACK(connect_port_activate), dialog);
+    const char* default_port = g_strdup_printf("%d", DEFAULT_PORT);
+    gtk_editable_set_text(host_port, default_port);
+    gtk_editable_set_text(connect_port, default_port);
+    g_free((void*)default_port);
 
     ShareDialogEntries r = {
         GTK_EDITABLE(host_port),
