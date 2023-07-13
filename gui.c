@@ -218,6 +218,10 @@ ShareDialogEntries share_dialog_entries(GtkBuilder* dialog_builder) {
     // g_signal_connect(host_port, "entry-activated", G_CALLBACK(host_port_activate), dialog);
     // g_signal_connect(connect_ip, "entry-activated", G_CALLBACK(connect_ip_activate), connect_port);
     // g_signal_connect(connect_port, "entry-activated", G_CALLBACK(connect_port_activate), dialog);
+    const char* default_port = g_strdup_printf("%d", DEFAULT_PORT);
+    gtk_editable_set_text(host_port, default_port);
+    gtk_editable_set_text(connect_port, default_port);
+    g_free((void*)default_port);
 
     ShareDialogEntries r = {
         GTK_EDITABLE(host_port),
