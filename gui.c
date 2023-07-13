@@ -2,6 +2,7 @@
 #include "buffer.h"
 #include "tab-page.h"
 #include "server.h"
+#include "client.h"
 #include <stdio.h>
 #include <string.h>
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -74,11 +75,31 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         }
     } else if (strcmp(response, SHARE_RESPONSE_CONNECT) == 0) {
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
-        const char* port = gtk_editable_get_text(params->entries.connect_port);
+        int port = atoi(gtk_editable_get_text(params->entries.connect_port));
 
-        printf("NOT IMPLEMENTED: Connect to %s with port %s\n", ip, port);
-        gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
-        gtk_toggle_button_set_active(params->toggle, true);
+        printf("Connect to ip address %s with port %d\n", ip, port); 
+        
+        switch (start_client(ip, port)) {
+            case Success:
+                printf("Client started successfully.\n");
+                gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
+                gtk_toggle_button_set_active(params->toggle, true);
+                break;
+            case AlreadyStarted:
+                fprintf(stderr, "Client is already running.\n");
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Client is already running"));
+                break;
+            case InvalidPort:
+                fprintf(stderr, "Invalid Port number. Must be between %d and %d\n", PORT_MIN, PORT_MAX);
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Invalid port. Must be between 1024 and 65535"));
+                break;
+            case Other:
+                fprintf(stderr, "Could not start Connecting for the reason above.\n");
+                adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Client not started. Check console output"));
+                break;
+        }
+        //gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
+        //gtk_toggle_button_set_active(params->toggle, true);
     }
 
     free(params);

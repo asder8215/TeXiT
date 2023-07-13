@@ -13,8 +13,8 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
 }
 
 
-
-StartServerStatus start_server(int port) {
+// adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
+StartStatus start_server(int port) {
     if (port < PORT_MIN || port > PORT_MAX) {
         return InvalidPort;
     }
