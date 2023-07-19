@@ -17,6 +17,13 @@ static const char* SHARE_RESPONSE_CONNECT = "connect";
 static const unsigned int CONTENT_MIN_WIDTH = 400;
 static const unsigned int CONTENT_MIN_HEIGHT = 200;
 
+typedef enum {
+    Server,
+    Client,
+    Off
+} ConnectionState;
+static ConnectionState connection_state = Off;
+
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
 static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params) {
     if (gtk_toggle_button_get_active(toggle)) {
@@ -40,14 +47,13 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), enable_params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
-        const char* title = gtk_button_get_label(GTK_BUTTON(toggle));
-        if(strcmp(title, SERVER_TOGGLE_HOSTING_TITLE) == 0){
+        if (connection_state == Server) {
             stop_server();
-        }
-        else if(strcmp(title, SERVER_TOGGLE_CONNECTED_TITLE) == 0){
+        } else if (connection_state == Client) {
             stop_client();
         }
         gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
+        connection_state = Off;
     }
 }
 
@@ -65,6 +71,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 printf("Host started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_HOSTING_TITLE);
                 gtk_toggle_button_set_active(params->toggle, true);
+                connection_state = Server;
                 break;
             case AlreadyStarted:
                 fprintf(stderr, "Server is already running.\n");
@@ -90,6 +97,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
                 gtk_toggle_button_set_active(params->toggle, true);
+                connection_state = Client;
                 break;
             case AlreadyStarted:
                 fprintf(stderr, "Client is already running.\n");
@@ -211,7 +219,11 @@ void main_window(AdwApplication *app) {
 }
 
 gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params) {
-    stop_server();
+    if (connection_state == Server) {
+        stop_server();
+    } else if (connection_state == Client) {
+        stop_client();
+    }
     free(params->file_click_params);
     free(params->share_click_params);
     free(params);
