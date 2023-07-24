@@ -10,21 +10,23 @@ GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
 
 
-static void server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
+static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
     char* msg = NULL;
     gsize msg_len = 0;
     GError* error = NULL;
     printf("channel: %p, condition: %d, connection: %p\n", channel, condition, connection);
 
-    if (g_io_channel_read_to_end(channel, &msg, &msg_len, &error) == G_IO_STATUS_ERROR) {
+    if (g_io_channel_read_to_end(channel, &msg, &msg_len, &error) != G_IO_STATUS_NORMAL) {
         fprintf(stderr, "Error (%d) reading input stream: %s\nClosing connection... NOW\n", error->code, error->message);
         // TODO: close connection
         g_free(error);
-        return;
+        return FALSE;
     }
 
     printf("Received message (%lu bytes): %s\n", msg_len, msg);
     g_free(msg);
+
+    return TRUE;
 }
 
 /// Handler for when the server gets a new connection request.
@@ -45,10 +47,10 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
 
-    GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-    const char* msg = "Welcome new user 😎";
-    g_output_stream_write_all(ostream, msg, strlen(msg), NULL, NULL, NULL);
-    g_output_stream_flush(ostream, NULL, NULL);
+    // GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
+    // const char* msg = "Welcome new user 😎";
+    // g_output_stream_write_all(ostream, msg, strlen(msg), NULL, NULL, NULL);
+    // g_output_stream_flush(ostream, NULL, NULL);
     
     return GDK_EVENT_PROPAGATE;
 }
