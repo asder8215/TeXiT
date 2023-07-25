@@ -6,20 +6,35 @@
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
 
-static void client_message_read(GIOChannel* channel, GIOCondition condition, gpointer _) {
-    char* msg = NULL;
-    gsize msg_len = 0;
+static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, gpointer _) {
+    const char* msg = NULL;
+    gsize total_read = 0;
+    char buf[100];
+    gsize read;
     GError* error = NULL;
-    GIOStatus status = g_io_channel_read_to_end(channel, &msg, &msg_len, &error);
+    
+    GIOStatus status;
+    while ((status = g_io_channel_read_chars(channel, buf, 99, &read, &error)) == G_IO_STATUS_NORMAL) {
+        buf[read] = '\0';
+        if (msg == NULL)
+            msg = g_strdup_printf("%s", buf);
+        else {
+            const char* prev = msg;
+            msg = g_strdup_printf("%s%s", msg, buf);
+            g_free((void*)prev);
+        }
+        total_read += read;
+    } 
     if (status == G_IO_STATUS_ERROR) {
         fprintf(stderr, "Error (%d) reading input stream: %s\nClosing connection... NOW\n", error->code, error->message);
-        // TODO: close connection
+        // TODO: remove callback and close connection
         g_free(error);
-        return;
+        return FALSE;
     }
-    // Never returns G_IO_STATUS_EOF
-    if (msg_len > 0)
-        printf("(Client) Received message (%lu bytes): %s\n", msg_len, msg);
+    // TODO: remove callback if status == G_IO_STATUS_AGAIN
+    printf("(Server) Received message (%lu bytes): %s\n", total_read, buf);
+    
+    return TRUE;
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
