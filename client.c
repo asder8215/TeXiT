@@ -1,4 +1,5 @@
 #include "client.h"
+#include "util.h"
 #include <stdio.h>
 #include <gio/gio.h>
 #include <gdk/gdk.h>
@@ -7,33 +8,24 @@ GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, gpointer _) {
-    const char* msg = NULL;
-    gsize total_read = 0;
-    char buf[100];
-    gsize read;
-    GError* error = NULL;
-    
-    GIOStatus status;
-    while ((status = g_io_channel_read_chars(channel, buf, 99, &read, &error)) == G_IO_STATUS_NORMAL) {
-        buf[read] = '\0';
-        if (msg == NULL)
-            msg = g_strdup_printf("%s", buf);
-        else {
-            const char* prev = msg;
-            msg = g_strdup_printf("%s%s", msg, buf);
-            g_free((void*)prev);
-        }
-        total_read += read;
-    } 
-    if (status == G_IO_STATUS_ERROR) {
-        fprintf(stderr, "Error (%d) reading input stream: %s\nClosing connection... NOW\n", error->code, error->message);
-        // TODO: remove callback and close connection
-        g_free(error);
+    bool closed = false;
+    const char* msg = read_channel(channel, &closed);
+    if (msg == NULL) {
+        printf("(Client) Could not read channel\n");
+        if (!closed)
+            close_connection(channel);
+        closed = true;
+    }
+
+    if (closed) {
+        stop_client();
         return FALSE;
     }
-    // TODO: remove callback if status == G_IO_STATUS_AGAIN
-    printf("(Server) Received message (%lu bytes): %s\n", total_read, buf);
+    // msg can't be NULL if closed is false
+
+    printf("(Client) Received message (%lu bytes): %s\n", strlen(msg), msg);
     
+    g_free((void*)msg);
     return TRUE;
 }
 
@@ -85,6 +77,7 @@ void stop_client() {
         GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
         g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
         g_object_unref(connection);
+        connection = NULL;
         g_object_unref(client);
         client = NULL;
     }

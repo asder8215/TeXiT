@@ -1,7 +1,7 @@
 #ifndef __CLIENT_H__
 #define __CLIENT_H__
 
-#include "server.h"
+#include "util.h"
 
 StartStatus start_client(const char* ip_address, int port);
 

@@ -1,5 +1,6 @@
 #include "server.h"
 #include "gui.h"
+#include "util.h"
 #include <stdio.h>
 #include <gio/gio.h>
 #include <gdk/gdk.h>
@@ -11,55 +12,61 @@ GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
 
 
-static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
-    // char* msg = NULL;
-    // gsize msg_len = 0;
-    // GError* error = NULL;
-
-    // // TODO: segfaults
-    // GIOStatus status = g_io_channel_read_to_end(channel, &msg, &msg_len, &error);
-    // if (status == G_IO_STATUS_ERROR) {
-    //     fprintf(stderr, "Error (%d) reading input stream: %s\nClosing connection... NOW\n", error->code, error->message);
-    //     // TODO: close connection
-    //     g_free(error);
-    //     return FALSE;
-    // }
-
-    // if (msg_len > 0) {
-    //     printf("(Server) Received message (%lu bytes): %s\n", msg_len, msg);
-    //     g_free(msg);
-    // }
-
-    // return TRUE;
-    
-    const char* msg = NULL;
-    gsize total_read = 0;
-    char buf[100];
-    gsize read;
-    GError* error = NULL;
-    
-    GIOStatus status;
-    while ((status = g_io_channel_read_chars(channel, buf, 99, &read, &error)) == G_IO_STATUS_NORMAL) {
-        buf[read] = '\0';
-        if (msg == NULL)
-            msg = g_strdup_printf("%s", buf);
-        else {
-            const char* prev = msg;
-            msg = g_strdup_printf("%s%s", msg, buf);
-            g_free((void*)prev);
+static void remove_connection(GSocketConnection* target) {
+    unsigned int i;
+    bool found = false;
+    // Look for target in the array
+    for (i = 0; i < MAX_CONNECTIONS; i++) {
+        if (server_connections[i] == target) {
+            found = true;
+            break;
         }
-        total_read += read;
-    } 
-    if (status == G_IO_STATUS_ERROR) {
-        fprintf(stderr, "Error (%d) reading input stream: %s\nClosing connection... NOW\n", error->code, error->message);
-        // TODO: remove callback and close connection
-        g_free(error);
+    }
+    if (!found) {
+        fprintf(stderr, "Error: Tried removing a conneciton that is not in the array\n");
+        return;
+    }
+    // And move each connection after 1 index back
+    for (i++; i < MAX_CONNECTIONS; i++) {
+        server_connections[i - 1] = server_connections[i];
+    }
+
+    server_connections[MAX_CONNECTIONS - 1] = NULL;
+    server_connections_count--;
+
+    g_object_unref(target);
+}
+
+static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
+    bool closed = false;
+    const char* msg = read_channel(channel, &closed);
+    if (msg == NULL) {
+        printf("(Server) Could not read channel\n");
+        if (!closed)
+            close_connection(channel);
+        closed = true;
+    }
+    
+    if (closed) {
+        remove_connection(connection);
         return FALSE;
     }
-    // TODO: remove callback if status == G_IO_STATUS_AGAIN
-    printf("(Server) Received message (%lu bytes): %s\n", total_read, buf);
-    
+    // msg can't be NULL if closed is false
+
+    printf("(Server) Received message (%lu bytes): %s\n", strlen(msg), msg);
+
+    g_free((void*)msg);
     return TRUE;
+
+    // GInputStream* ism = g_io_stream_get_input_stream(G_IO_STREAM(connection));
+    // char buf[100];
+    // gssize read = g_input_stream_read(ism, buf, 99, NULL, NULL);
+    // if (read > 0) {
+    //     buf[read] = '\0';
+    //     printf("Read input stream (%ld bytes): %s\n", read, buf);
+    // } else
+    //     return FALSE;
+    // return TRUE;
 }
 
 /// Handler for when the server gets a new connection request.
