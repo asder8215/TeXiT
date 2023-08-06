@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <gio/gio.h>
 #include <gdk/gdk.h>
+#include "json_object.h"
 
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;

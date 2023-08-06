@@ -2,3 +2,5 @@
 texit
 text_editor
 .cache
+build/*
+compile_commands.json
