@@ -86,9 +86,9 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
 
-    GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-    const char* msg = "Welcome new user 😎";
-    g_output_stream_write(ostream, msg, strlen(msg), NULL, NULL);
+    // Send currently opened tabs
+    send_message(connection, "Welcome new user 😎");
+    send_message(connection, "Welcome new member");
     
     return GDK_EVENT_PROPAGATE;
 }
