@@ -3,7 +3,6 @@
 
 const char* read_channel(GIOChannel* channel, bool* closed) {
     const char* msg = NULL;
-    gsize total_read = 0;
     char buf[100];
     gsize read;
     GError* error = NULL;
@@ -19,7 +18,6 @@ const char* read_channel(GIOChannel* channel, bool* closed) {
                 msg = g_strdup_printf("%s%s", msg, buf);
                 g_free((void*)prev);
             }
-            total_read += read;
         }
     }
 
@@ -40,8 +38,14 @@ const char* read_channel(GIOChannel* channel, bool* closed) {
             // will not happen
             break;
     }
-    
+
     return msg;
+}
+
+void send_message(GSocketConnection* connection, const char* msg) {
+    GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
+    // strlen(msg) + 1 to include the '\0'
+    g_output_stream_write(ostream, msg, strlen(msg), NULL, NULL);
 }
 
 void close_connection(GIOChannel* channel) {
