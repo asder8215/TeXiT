@@ -19,20 +19,28 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
 
 	return rtrn;
 }
-Page get_active_page(AdwTabView* tab_view) {
-    Page rtrn;
-    rtrn.page = adw_tab_view_get_selected_page(tab_view);
 
-    if (rtrn.page != NULL)
-        rtrn.buffer = EDITOR_BUFFER(gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+EditorBuffer* page_get_buffer(AdwTabPage* page) {
+    if (page == NULL)
+        return NULL;
+    else
+        return EDITOR_BUFFER(gtk_text_view_get_buffer(GTK_TEXT_VIEW(
             gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
-                adw_tab_page_get_child(rtrn.page)
+                adw_tab_page_get_child(page)
             ))
         )));
-    else
-        rtrn.buffer = NULL;
-    
-	return rtrn;
+}
+Page get_active_page(AdwTabView* tab_view) {
+    Page page;
+    page.page = adw_tab_view_get_selected_page(tab_view);
+    page.buffer = page_get_buffer(page.page);
+	return page;
+}
+Page get_nth_page(AdwTabView* tab_view, size_t n) {
+    Page page;
+    page.page = adw_tab_view_get_nth_page(tab_view, n);
+    page.buffer = page_get_buffer(page.page);
+    return page;
 }
 
 /// Handles response receive from the close tab page message dialog.
