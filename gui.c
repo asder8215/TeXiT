@@ -41,6 +41,7 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         enable_params->toggle = toggle;
         enable_params->entries = entries;
         enable_params->toast_overlay = params->toast_overlay;
+        enable_params->tab_view = params->tab_view;
 
         // Connect response callback
         gtk_window_set_transient_for(GTK_WINDOW(dialog), params->window);
@@ -66,7 +67,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
         printf("Starting host with port %d...\n", port);
-        switch (start_server(port)) {
+        switch (start_server(port, params->tab_view)) {
             case Success:
                 printf("Host started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_HOSTING_TITLE);
@@ -92,7 +93,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port)) {
+        switch (start_client(ip, port, params->tab_view)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
@@ -201,6 +202,7 @@ void main_window(AdwApplication *app) {
 
     share_click_params->window = file_click_params->window;
     share_click_params->toast_overlay = file_click_params->toast_overlay;
+    share_click_params->tab_view = file_click_params->tab_view;
 
     g_signal_connect(file_click_params->tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
 

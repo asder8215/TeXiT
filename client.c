@@ -31,11 +31,9 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port){
-    if (port < PORT_MIN || port > PORT_MAX) {
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view){
+    if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
-    }
-    
     if (client != NULL)
         return AlreadyStarted;
     
@@ -65,9 +63,6 @@ StartStatus start_client(const char* ip_address, int port){
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, NULL);
-
-    GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-    g_output_stream_write(ostream, "Test", 4, NULL, NULL);
 
     return Success;
 }

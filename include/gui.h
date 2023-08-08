@@ -16,11 +16,13 @@ typedef struct {
 typedef struct {
     GtkWindow* window;
     AdwToastOverlay* toast_overlay;
+    AdwTabView* tab_view;
 } ShareClickParams;
 
 typedef struct {
     GtkToggleButton* toggle;
     AdwToastOverlay* toast_overlay;
+    AdwTabView* tab_view;
     ShareDialogEntries entries;
 } ShareEnableParams;
 

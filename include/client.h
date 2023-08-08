@@ -3,7 +3,7 @@
 
 #include "util.h"
 
-StartStatus start_client(const char* ip_address, int port);
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view);
 
 void stop_client();
 

@@ -7,7 +7,7 @@
 
 /// Tries to start a server using the provided port number.
 /// Port number must be between 1024 and 65535 (inclusive).
-StartStatus start_server(int port);
+StartStatus start_server(int port, AdwTabView* tab_view);
 /// Wonder what this does ?
 void stop_server();
 

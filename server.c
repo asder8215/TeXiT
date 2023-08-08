@@ -70,7 +70,7 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 /// Handler for when the server gets a new connection request.
-static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, gpointer unused_data) {
+static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, AdwTabView* tab_view) {
     if (server_connections_count == MAX_CONNECTIONS) {
         fprintf(stderr, "Attempted new connection, but Reached maximum number of connections (%d)\n", MAX_CONNECTIONS);
         return GDK_EVENT_PROPAGATE;
@@ -94,10 +94,9 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port) {
-    if (port < PORT_MIN || port > PORT_MAX) {
+StartStatus start_server(int port, AdwTabView* tab_view) {
+    if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
-    }
     if (server != NULL)
         return AlreadyStarted;
 
@@ -113,7 +112,7 @@ StartStatus start_server(int port) {
         return Other;
     };
 
-    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), NULL);
+    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), tab_view);
     g_socket_service_start(server);
 
     return Success;
