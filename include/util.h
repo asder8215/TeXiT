@@ -3,8 +3,8 @@
 
 #include "arraylist.h"
 #include <gdk/gdk.h>
+#include <adwaita.h>
 #include <stdbool.h>
-#include <json.h>
 
 #define PORT_MIN 1024
 #define PORT_MAX 49151
@@ -91,17 +91,52 @@ typedef enum {
     MSG_T_INSERT_CONTENT
 } MessageType;
 
-/// Deserialize a json list containing AddTab structs
+/// Deserialize a json list into a **list of  AddTab** structs.
+/// array_list.array is NULL if deserialization fails.
 array_list deserialize_add_tabs(const char* json);
-/// Deserialize a json list containing Tab Indexes
+/// Deserialize a json list into a **list of Tab Indexes** (unsigned int).
+/// array_list.array NULL if deserialization fails.
 array_list deserialize_remove_tabs(const char* json);
-/// Deserialize a json list containing RemoveTab structs
+/// Deserialize a json list into a **list of RemoveTab** structs.
+/// array_list.array NULL if deserialization fails.
 array_list deserialize_rename_tabs(const char* json);
-/// Can be NULL.
+/// Returns NULL if deserialization fails.
+/// Caller takes ownership of return value and must free it.
 DeleteContent* deserialize_delete_content(const char* json);
-/// Can be NULL.
+/// Returns NULL if deserialization fails.
+/// Caller takes ownership of return value and must free it.
 ReplaceContent* deserialize_replace_content(const char* json);
-/// Can be NULL.
+/// Returns NULL if deserialization fails.
+/// Caller takes ownership of return value and must free it.
 InsertContent* deserialize_insert_content(const char* json);
+
+/// TODO: maybe use array_list for the following?
+
+/// Create a *list of AddTab* structs from **tab_view** and directly serialize it into JSON to be sent as a message.
+/// Useful when sending first message of a newly established connection.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_add_tabs_from_view(AdwTabView* tab_view);
+/// Serialize an **array of AddTab** structs into JSON to be sent as a message.
+/// Function takes ownership of **add_tabs** and frees it.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_add_tabs(AddTab* add_tabs, size_t len);
+/// Serialize an **array of Tab indexes** into JSON to be sent as a message.
+/// Function takes ownership of **tab_idxs** and frees it.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_remove_tabs(unsigned int* tab_idxs, size_t len);
+/// Serialize an **array of RenameTab** structs into JSON to be sent as a message.
+/// Function takes ownership of **rename_tabs** and frees it.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_rename_tabs(RenameTab* rename_tabs, size_t len);
+/// Serialize a **DeleteContent** struct into JSON to be sent as a message.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_delete_content(DeleteContent delete_content);
+/// Serialize a **ReplaceContent** struct into JSON to be sent as a message.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_replace_content(ReplaceContent delete_content);
+/// Serialize a **InsertContent** struct into JSON to be sent as a message.
+/// Caller takes ownership of return value and must free it.
+const char* serialize_insert_content(InsertContent delete_content);
+
 
 #endif // __UTIL_H__
