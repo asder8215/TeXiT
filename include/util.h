@@ -1,7 +1,7 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
-#include "arraylist.h"
+#include "json.h"
 #include <gdk/gdk.h>
 #include <adwaita.h>
 #include <stdbool.h>
@@ -35,14 +35,14 @@ void close_connection(GIOChannel* channel);
 // JSON serialization/deserialization
 
 /// Has ownership of title and content.
-/// Should be malloced and freed.
 typedef struct {
     unsigned int tab_idx;
     const char* title;
     const char* content;
 } AddTab;
-AddTab* add_tab_new(unsigned int tab_idx, const char* title, const char* content);
-void add_tab_free(AddTab* self);
+// /// Copies **title** and **content**.
+// AddTab add_tab_new(unsigned int tab_idx, const char* title, const char* content);
+void add_tab_free(AddTab self);
 
 /// Has ownership of title.
 /// Should be malloced and freed.
@@ -50,8 +50,8 @@ typedef struct {
     unsigned int tab_idx;
     const char* title;
 } RenameTab;
-RenameTab* rename_tab_new(unsigned int tab_idx, const char* title);
-void rename_tab_free(RenameTab* self);
+// RenameTab* rename_tab_new(unsigned int tab_idx, const char* title);
+void rename_tab_free(RenameTab self);
 
 // Does not have to be malleced or freed
 typedef struct {
@@ -69,8 +69,8 @@ typedef struct {
     size_t byte_length;
     const char* content;
 } ReplaceContent;
-ReplaceContent* replace_content_new(unsigned int tab_idx, size_t start_byte, size_t byte_length, const char* content);
-void replace_content_free(ReplaceContent* self);
+// ReplaceContent* replace_content_new(unsigned int tab_idx, size_t start_byte, size_t byte_length, const char* content);
+void replace_content_free(ReplaceContent self);
 
 /// Has ownership of content.
 /// Should be malloced and freed.
@@ -79,8 +79,8 @@ typedef struct {
     size_t start_byte;
     const char* content;
 } InsertContent;
-InsertContent* insert_content_new(unsigned int tab_idx, size_t start_byte, const char* content);
-void insert_content_free(InsertContent* self);
+// InsertContent* insert_content_new(unsigned int tab_idx, size_t start_byte, const char* content);
+void insert_content_free(InsertContent self);
 
 typedef enum {
     MSG_T_ADD_TABS,
@@ -92,27 +92,34 @@ typedef enum {
 } MessageType;
 
 /// Deserialize a json list into a **list of  AddTab** structs.
-/// array_list.array is NULL if deserialization fails.
-array_list deserialize_add_tabs(const char* json);
+/// **list** is a borrowed reference.
+/// Returns NULL if deserialization fails.
+array_list* deserialize_add_tabs(json_object* list);
 /// Deserialize a json list into a **list of Tab Indexes** (unsigned int).
+/// **json** is a borrowed reference.
 /// array_list.array NULL if deserialization fails.
 array_list deserialize_remove_tabs(const char* json);
 /// Deserialize a json list into a **list of RemoveTab** structs.
+/// **json** is a borrowed reference.
 /// array_list.array NULL if deserialization fails.
 array_list deserialize_rename_tabs(const char* json);
 /// Returns NULL if deserialization fails.
+/// **json** is a borrowed reference.
 /// Caller takes ownership of return value and must free it.
 DeleteContent* deserialize_delete_content(const char* json);
 /// Returns NULL if deserialization fails.
+/// **json** is a borrowed reference.
 /// Caller takes ownership of return value and must free it.
 ReplaceContent* deserialize_replace_content(const char* json);
 /// Returns NULL if deserialization fails.
+/// **json** is a borrowed reference.
 /// Caller takes ownership of return value and must free it.
 InsertContent* deserialize_insert_content(const char* json);
 
 /// TODO: maybe use array_list for the following?
 
-/// Create a *list of AddTab* structs from **tab_view** and directly serialize it into JSON to be sent as a message.
+/// Create a *list of AddTab* structs from all the tabs in **tab_view** and directly serialize it into JSON to be sent as a message.
+/// Helper function of `serialize_add_tabs()`.
 /// Useful when sending first message of a newly established connection.
 /// Caller takes ownership of return value and must free it.
 const char* serialize_add_tabs_from_view(AdwTabView* tab_view);
