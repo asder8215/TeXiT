@@ -71,7 +71,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
         printf("Starting host with port %d...\n", port);
-        switch (start_server(port, params)) {
+        switch (start_server(port, params->tab_view)) {
             case Success:
                 printf("Host started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_HOSTING_TITLE);
@@ -97,7 +97,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params)) {
+        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
@@ -117,8 +117,6 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
                 adw_toast_overlay_add_toast(params->toast_overlay, adw_toast_new("Client not started. Check console output"));
                 break;
         }
-        //gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
-        //gtk_toggle_button_set_active(params->toggle, true);
     }
 
     free(params);

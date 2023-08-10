@@ -1,4 +1,5 @@
 #include "client.h"
+#include "json_types.h"
 #include "util.h"
 #include <stdio.h>
 #include <gio/gio.h>
@@ -7,10 +8,10 @@
 
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
-ShareEnableParams* client_params = NULL;
+// ShareEnableParams* client_params = NULL;
 bool recreate_window = true;
 
-static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, ShareEnableParams* client_params) {
+static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
     if (msg == NULL) {
@@ -29,16 +30,16 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
     printf("(Client) Received message (%lu bytes): %s\n", strlen(msg), msg);
     
     if (recreate_window) {
-        for(int i = adw_tab_view_get_n_pages(client_params->tab_view); i != 0; i = adw_tab_view_get_n_pages(client_params->tab_view)){
-            Page page = get_active_page(client_params->tab_view);
-            adw_tab_view_close_page(client_params->tab_view, page.page);
-        }
+        while (adw_tab_view_get_n_pages(tab_view)) 
+            adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, 0));
         recreate_window = false;
     }
     
-    
     json_object* jobj = json_tokener_parse(msg);
-    //array_list* arr = deserialize_add_tabs(jobj);
+
+    // if (msg_type == json_type_object && json_object_key == "add-tabs")
+    //     list = jobj["add-tabs"]
+    //     array_list* arr = deserialize_add_tabs(list);
     
     /**
     for(size_t i = 0; i < array_list_length(arr); i++){
@@ -47,18 +48,16 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
     }
     **/
-    
-    //printf("%lu\n", array_list_length(arr));
-    printf("%s\n", json_object_to_json_string_ext(jobj, JSON_C_TO_STRING_SPACED | JSON_C_TO_STRING_PRETTY));
 
     //adw_tab_view_close_page_finish(client_params->tab_view, );
     //adw_tab_view_close_page(client_params->tab_view, page.page);
+    json_object_put(jobj);
     g_free((void*)msg);
     return TRUE;
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port, ShareEnableParams* enable_params){
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* buttons, GtkLabel* label){
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (client != NULL)
@@ -89,19 +88,10 @@ StartStatus start_client(const char* ip_address, int port, ShareEnableParams* en
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
-    
-    client_params = malloc(sizeof(ShareEnableParams));
 
-    client_params->window = enable_params->window;
-    client_params->file_buttons = enable_params->file_buttons;
-    client_params->label = enable_params->label;
-    client_params->tabbar = enable_params->tabbar;
-    client_params->toggle = enable_params->toggle;
-    client_params->entries = enable_params->entries;
-    client_params->toast_overlay = enable_params->toast_overlay;
-    client_params->tab_view = enable_params->tab_view;
+    /// TODO: Hide buttons
 
-    g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, client_params);
+    g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
 
     return Success;
 }
@@ -115,8 +105,5 @@ void stop_client() {
         connection = NULL;
         g_object_unref(client);
         client = NULL;
-        free(client_params);
-        client_params = NULL;
-        recreate_window = true;
     }
 }

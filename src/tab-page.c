@@ -65,40 +65,31 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
     free(params);
 }
 
-// TODO: Come back to this later to find a more efficient way of detecting
-// whether a file has been edited or not.
 /// Handler for closing a tab page.
 gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window) {
-    Page curr_page = get_active_page(tab_view);
+    /// TODO: this line should be deleted
+    // Page curr_page = get_active_page(tab_view);
     
-    const char* file_path = editor_buffer_get_file_path(curr_page.buffer);
+    EditorBuffer* buffer = page_get_buffer(page);
+    // const char* file_path = editor_buffer_get_file_path(curr_page.buffer);
+    const char* file_path = editor_buffer_get_file_path(buffer);
     
     GFile* file;
-    if(file_path != NULL){
+    if(file_path != NULL)
         file = g_file_new_for_path(file_path);
-    }
-    else{
+    else
         file = NULL;
-    }
+
     const char* file_name;
-    
     // file_name utilized for the close tab message dialog
-    if(file != NULL){
+    if(file != NULL)
         file_name = g_file_get_basename(file);
-    }
-    else{
+    else
         file_name = "Untitled";
-    }
-    
-    // utilizes the edited var boolean in editor buffer to check if the buffer is changed or not.
-    int is_buffer_edited = 0;
-    if(editor_buffer_get_edited(curr_page.buffer)){
-        is_buffer_edited = 1;
-    }
     
     // Prompt user with if they want to cancel closing the tab, closing the
     // tab even with unsaved changes, or save the content in the tab.
-    if(is_buffer_edited){
+    if(editor_buffer_get_edited(buffer)){
         AdwMessageDialog* dialog = ADW_MESSAGE_DIALOG(adw_message_dialog_new(GTK_WINDOW(window), "Save File?", NULL));
 
         adw_message_dialog_format_body(ADW_MESSAGE_DIALOG(dialog), "There are unsaved changes in %s.",
@@ -132,7 +123,7 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     }
     // Close the tab if nothing's changed.
     else{
-        adw_tab_view_close_page_finish(tab_view, curr_page.page, true);
+        adw_tab_view_close_page_finish(tab_view, page, true);
         if (adw_tab_view_get_n_pages(tab_view) == 0)
             gtk_widget_set_visible(GTK_WIDGET(tab_view), false);
     }

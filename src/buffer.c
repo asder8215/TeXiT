@@ -1,4 +1,5 @@
 #include "buffer.h"
+#include "tab-page.h"
 #include "gui.h"
 #include <string.h>
 
@@ -114,26 +115,25 @@ typedef struct {
 
 static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveResponseParams* params) {
     GFile* file = gtk_file_dialog_save_finish(dialog, result, NULL);
-    AdwTabPage* current_page = adw_tab_view_get_selected_page(params->tab_view);
     
     if (file == NULL) {
         // User cancelled FileDialog
         // Do not close tab
         if (params->close_tab)
-            adw_tab_view_close_page_finish(params->tab_view, current_page, false);
+            adw_tab_view_close_page_finish(params->tab_view, params->buffer->tab_page, false);
     } else {
         // File was saved
-        write_file(file, &params->buffer->parent);
+        write_file(file, GTK_TEXT_BUFFER(params->buffer));
         // Set tab title
-        adw_tab_page_set_title(current_page, g_file_get_basename(file));
+        adw_tab_page_set_title(params->buffer->tab_page, g_file_get_basename(file));
         // Set Buffer file_path
         params->buffer->file_path = g_file_get_path(file);
         // Remove unsaved indicator
-        adw_tab_page_set_indicator_icon(current_page, NULL);
+        adw_tab_page_set_indicator_icon(params->buffer->tab_page, NULL);
         
         // Close tab
         if (params->close_tab)
-            adw_tab_view_close_page_finish(params->tab_view, current_page, true);
+            adw_tab_view_close_page_finish(params->tab_view, params->buffer->tab_page, true);
         if (adw_tab_view_get_n_pages(params->tab_view) == 0)
             gtk_widget_set_visible(GTK_WIDGET(params->tab_view), false);
     }
@@ -153,7 +153,6 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
 
         // Freed in `save_response()`
         SaveResponseParams* params = malloc(sizeof(SaveResponseParams));
-        params->tab_view = tab_view;
         params->buffer = self;
         params->close_tab = close_tab;
         gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(save_response), params);

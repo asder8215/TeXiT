@@ -24,11 +24,10 @@ AdwTabPage* editor_buffer_get_page(EditorBuffer* self);
 bool editor_buffer_get_edited(EditorBuffer* self);
 void editor_buffer_set_edited(EditorBuffer* self, bool value);
 
-/// Saves the contents of *self* to the file at *self.file_path*, overwriteing the file.
-/// Gets the *current_page* (the one this buffer is in) from **tab_view** and sets its title.
-/// The FilePicker dialog is set trainsient for *parent_window*, which could be NULL.
+/// Saves the contents of *self* to the file at *self.file_path*, overwriting the file.
+/// Sets the title of *self->tab_page* to the name of the file that was saved, or closes it if *close_tab* is true.
 /// **close_tab** is `true` if this function is called from a `AdwTabView::close-page` callback,
-/// so this function will finish closing the page after file is saved.
+/// The FilePicker dialog is set trainsient for *parent_window*, which could be NULL.
 void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* parent_window, bool close_tab);
 
 G_END_DECLS

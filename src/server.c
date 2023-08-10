@@ -10,7 +10,6 @@ GSocketService* server = NULL;
 // TODO: store channels inteaddd of connections???
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
-ShareEnableParams* server_params = NULL;
 
 static void remove_connection(GSocketConnection* target) {
     unsigned int i;
@@ -57,20 +56,10 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
 
     g_free((void*)msg);
     return TRUE;
-
-    // GInputStream* ism = g_io_stream_get_input_stream(G_IO_STREAM(connection));
-    // char buf[100];
-    // gssize read = g_input_stream_read(ism, buf, 99, NULL, NULL);
-    // if (read > 0) {
-    //     buf[read] = '\0';
-    //     printf("Read input stream (%ld bytes): %s\n", read, buf);
-    // } else
-    //     return FALSE;
-    // return TRUE;
 }
 
 /// Handler for when the server gets a new connection request.
-static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, ShareEnableParams* server_params) {
+static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, AdwTabView* tab_view) {
     if (server_connections_count == MAX_CONNECTIONS) {
         fprintf(stderr, "Attempted new connection, but Reached maximum number of connections (%d)\n", MAX_CONNECTIONS);
         return GDK_EVENT_PROPAGATE;
@@ -87,15 +76,15 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
 
     // Send currently opened tabs
-    //send_message(connection, "Welcome new user 😎");
-    //send_message(connection, "Welcome new member");
-    send_message(connection, serialize_add_tabs_from_view(server_params->tab_view));
+    const char* msg = serialize_add_tabs_from_view(tab_view);
+    send_message(connection, msg);
+    free((void*)msg);
     
     return GDK_EVENT_PROPAGATE;
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port, ShareEnableParams* enable_params) {
+StartStatus start_server(int port, AdwTabView* tab_view) {
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (server != NULL)
@@ -113,18 +102,7 @@ StartStatus start_server(int port, ShareEnableParams* enable_params) {
         return Other;
     };
 
-    server_params = malloc(sizeof(ShareEnableParams));
-
-    server_params->window = enable_params->window;
-    server_params->file_buttons = enable_params->file_buttons;
-    server_params->label = enable_params->label;
-    server_params->tabbar = enable_params->tabbar;
-    server_params->toggle = enable_params->toggle;
-    server_params->entries = enable_params->entries;
-    server_params->toast_overlay = enable_params->toast_overlay;
-    server_params->tab_view = enable_params->tab_view;
-
-    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), server_params);
+    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), tab_view);
     g_socket_service_start(server);
     
     return Success;
@@ -142,7 +120,5 @@ void stop_server() {
         }
         server_connections_count = 0;
         server = NULL;
-        free(server_params);
-        server_params = NULL;
     }
 }
