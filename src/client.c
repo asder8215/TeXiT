@@ -56,7 +56,7 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* buttons, GtkLabel* label){
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view){
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (client != NULL)
@@ -87,17 +87,6 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
-
-    // Hide buttons
-    gtk_widget_set_visible(GTK_WIDGET(buttons->file_new), false);
-    gtk_widget_set_visible(GTK_WIDGET(buttons->file_open), false);
-    gtk_widget_set_visible(GTK_WIDGET(buttons->file_save), false);
-
-    // Show dialog to make user choose if they want to discard all changes or go back
-
-    // Close tabs the user previously had open
-    for (int i = 0; i < adw_tab_view_get_n_pages(tab_view); i++)
-        adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, i));
 
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
 

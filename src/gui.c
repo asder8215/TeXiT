@@ -95,9 +95,20 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
         int port = atoi(gtk_editable_get_text(params->entries.connect_port));
 
+        // The client should attempt to close all tabs and hide file-buttons before connecting
+        // Hide buttons
+        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_new), false);
+        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_open), false);
+        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_save), false);
+
+        // Close all tabs the user previously had open
+        g_signal_handlers_disconnect_by_func(params->tab_view, close_tab_page, NULL);
+        while (adw_tab_view_get_n_pages(params->tab_view))
+            adw_tab_view_close_page(params->tab_view, adw_tab_view_get_nth_page(params->tab_view, 0));
+
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label)) {
+        switch (start_client(ip, port, params->tab_view)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
