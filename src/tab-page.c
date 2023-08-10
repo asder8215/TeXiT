@@ -43,21 +43,27 @@ Page get_nth_page(AdwTabView* tab_view, size_t n) {
     return page;
 }
 
+typedef struct {
+    GtkWindow* window;
+    AdwTabView* tab_view;
+    AdwTabPage* target_page;
+} CloseUnsavedParams;
+
 /// Handles response receive from the close tab page message dialog.
-static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* result, FileClickParams* params) {  
+static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* result, CloseUnsavedParams* params) {  
     const char* response = adw_message_dialog_choose_finish(dialog, result);
-    Page curr_page = get_active_page(params->tab_view);
-    
+    EditorBuffer* buffer = page_get_buffer(params->target_page);
+
     // save response
     if (strcmp(response, "save") == 0)
         // calls tab_view.close_page_finish(true) if file was successfully saved
-        editor_buffer_save(curr_page.buffer, params->tab_view, params->window, true);
+        editor_buffer_save(buffer, params->tab_view, params->window, true);
     // close response
     else if (strcmp(response, "close") == 0) 
-        adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), true);
+        adw_tab_view_close_page_finish(params->tab_view, params->target_page, true);
     // cancel response
     else if (strcmp(response, "cancel") == 0)
-        adw_tab_view_close_page_finish(params->tab_view, ADW_TAB_PAGE(curr_page.page), false);
+        adw_tab_view_close_page_finish(params->tab_view, params->target_page, false);
 
     if (adw_tab_view_get_n_pages(params->tab_view) == 0)
         gtk_widget_set_visible(GTK_WIDGET(params->tab_view), false);
@@ -67,11 +73,7 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
 
 /// Handler for closing a tab page.
 gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window) {
-    /// TODO: this line should be deleted
-    // Page curr_page = get_active_page(tab_view);
-    
     EditorBuffer* buffer = page_get_buffer(page);
-    // const char* file_path = editor_buffer_get_file_path(curr_page.buffer);
     const char* file_path = editor_buffer_get_file_path(buffer);
     
     GFile* file;
@@ -108,10 +110,10 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
         adw_message_dialog_set_default_response(ADW_MESSAGE_DIALOG(dialog), "cancel");
         adw_message_dialog_set_close_response(ADW_MESSAGE_DIALOG(dialog), "cancel");
 
-        FileClickParams* params = malloc(sizeof(FileClickParams));
+        CloseUnsavedParams* params = malloc(sizeof(CloseUnsavedParams));
         params->window = GTK_WINDOW(dialog);
-        params->tab_view = ADW_TAB_VIEW(tab_view);
-        params->toast_overlay = NULL;
+        params->tab_view = tab_view;
+        params->target_page = page;
 
         gtk_window_set_modal(GTK_WINDOW(dialog), true);
         gtk_window_set_transient_for(GTK_WINDOW(dialog), window);

@@ -29,11 +29,10 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 
     printf("(Client) Received message (%lu bytes): %s\n", strlen(msg), msg);
     
-    if (recreate_window) {
-        while (adw_tab_view_get_n_pages(tab_view)) 
-            adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, 0));
-        recreate_window = false;
-    }
+    // if (recreate_window) {
+        
+    //     recreate_window = false;
+    // }
     
     json_object* jobj = json_tokener_parse(msg);
 
@@ -89,7 +88,16 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
 
-    /// TODO: Hide buttons
+    // Hide buttons
+    gtk_widget_set_visible(GTK_WIDGET(buttons->file_new), false);
+    gtk_widget_set_visible(GTK_WIDGET(buttons->file_open), false);
+    gtk_widget_set_visible(GTK_WIDGET(buttons->file_save), false);
+
+    // Show dialog to make user choose if they want to discard all changes or go back
+
+    // Close tabs the user previously had open
+    for (int i = 0; i < adw_tab_view_get_n_pages(tab_view); i++)
+        adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, i));
 
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
 
