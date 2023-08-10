@@ -14,12 +14,25 @@ typedef struct {
 } ShareDialogEntries;
 
 typedef struct {
+    GtkButton* file_new;
+    GtkButton* file_save;
+    GtkButton* file_open;
+} FileButtons;
+
+typedef struct {
     GtkWindow* window;
+    FileButtons* file_buttons;
+    GtkLabel* label;
+    AdwTabBar* tabbar;
     AdwToastOverlay* toast_overlay;
     AdwTabView* tab_view;
 } ShareClickParams;
 
 typedef struct {
+    GtkWindow* window;
+    FileButtons* file_buttons;
+    GtkLabel* label;
+    AdwTabBar* tabbar;
     GtkToggleButton* toggle;
     AdwToastOverlay* toast_overlay;
     AdwTabView* tab_view;
@@ -44,6 +57,7 @@ typedef struct {
 typedef struct {
     FileClickParams* file_click_params;
     ShareClickParams* share_click_params;
+    FileButtons* file_buttons;
 } MainMalloced;
 
 static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params);

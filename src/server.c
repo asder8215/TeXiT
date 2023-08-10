@@ -10,7 +10,7 @@ GSocketService* server = NULL;
 // TODO: store channels inteaddd of connections???
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
-
+ShareEnableParams* server_params = NULL;
 
 static void remove_connection(GSocketConnection* target) {
     unsigned int i;
@@ -70,7 +70,7 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 /// Handler for when the server gets a new connection request.
-static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, AdwTabView* tab_view) {
+static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, ShareEnableParams* server_params) {
     if (server_connections_count == MAX_CONNECTIONS) {
         fprintf(stderr, "Attempted new connection, but Reached maximum number of connections (%d)\n", MAX_CONNECTIONS);
         return GDK_EVENT_PROPAGATE;
@@ -87,14 +87,15 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
 
     // Send currently opened tabs
-    send_message(connection, "Welcome new user 😎");
-    send_message(connection, "Welcome new member");
+    //send_message(connection, "Welcome new user 😎");
+    //send_message(connection, "Welcome new member");
+    send_message(connection, serialize_add_tabs_from_view(server_params->tab_view));
     
     return GDK_EVENT_PROPAGATE;
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port, AdwTabView* tab_view) {
+StartStatus start_server(int port, ShareEnableParams* enable_params) {
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (server != NULL)
@@ -112,9 +113,20 @@ StartStatus start_server(int port, AdwTabView* tab_view) {
         return Other;
     };
 
-    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), tab_view);
-    g_socket_service_start(server);
+    server_params = malloc(sizeof(ShareEnableParams));
 
+    server_params->window = enable_params->window;
+    server_params->file_buttons = enable_params->file_buttons;
+    server_params->label = enable_params->label;
+    server_params->tabbar = enable_params->tabbar;
+    server_params->toggle = enable_params->toggle;
+    server_params->entries = enable_params->entries;
+    server_params->toast_overlay = enable_params->toast_overlay;
+    server_params->tab_view = enable_params->tab_view;
+
+    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), server_params);
+    g_socket_service_start(server);
+    
     return Success;
 }
 
@@ -130,5 +142,7 @@ void stop_server() {
         }
         server_connections_count = 0;
         server = NULL;
+        free(server_params);
+        server_params = NULL;
     }
 }

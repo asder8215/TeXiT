@@ -38,6 +38,10 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         // C moment :( Why must it be done like this
         // Freed by `share_enable_response()`.
         ShareEnableParams* enable_params = malloc(sizeof(ShareEnableParams));
+        enable_params->window = params->window;
+        enable_params->file_buttons = params->file_buttons;
+        enable_params->label = params->label;
+        enable_params->tabbar = params->tabbar;
         enable_params->toggle = toggle;
         enable_params->entries = entries;
         enable_params->toast_overlay = params->toast_overlay;
@@ -67,7 +71,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
         printf("Starting host with port %d...\n", port);
-        switch (start_server(port, params->tab_view)) {
+        switch (start_server(port, params)) {
             case Success:
                 printf("Host started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_HOSTING_TITLE);
@@ -93,7 +97,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params->tab_view)) {
+        switch (start_client(ip, port, params)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
@@ -185,9 +189,11 @@ void main_window(AdwApplication *app) {
 
     FileClickParams* file_click_params = malloc(sizeof(FileClickParams));
     ShareClickParams* share_click_params = malloc(sizeof(ShareClickParams));
+    FileButtons* file_buttons = malloc(sizeof(FileButtons));
     MainMalloced* malloced = malloc(sizeof(MainMalloced));
     malloced->file_click_params = file_click_params;
     malloced->share_click_params = share_click_params;
+    malloced->file_buttons = file_buttons;
 
     AdwApplicationWindow* window = ADW_APPLICATION_WINDOW(gtk_builder_get_object(builder, "main-window"));
     gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
@@ -202,16 +208,19 @@ void main_window(AdwApplication *app) {
 
     share_click_params->window = file_click_params->window;
     share_click_params->toast_overlay = file_click_params->toast_overlay;
-    share_click_params->tab_view = file_click_params->tab_view;
-
+    share_click_params->tab_view = file_click_params->tab_view; 
+    share_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
+    share_click_params->tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
+    
     g_signal_connect(file_click_params->tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
-
-    GtkButton* file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
-    g_signal_connect(file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
-    GtkButton* file_open = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
-    g_signal_connect(file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
-    GtkButton* file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
-    g_signal_connect(file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
+    file_buttons->file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
+    g_signal_connect(file_buttons->file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
+    file_buttons->file_open = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
+    g_signal_connect(file_buttons->file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
+    file_buttons->file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
+    g_signal_connect(file_buttons->file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
+    
+    share_click_params->file_buttons = file_buttons;
 
     GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
@@ -228,6 +237,7 @@ gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params)
     }
     free(params->file_click_params);
     free(params->share_click_params);
+    free(params->file_buttons);
     free(params);
     return GDK_EVENT_PROPAGATE;
 }

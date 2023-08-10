@@ -2,6 +2,8 @@
 #define __UTIL_H__
 
 #include "json.h"
+#include "gui.h"
+#include "tab-page.h"
 #include <gdk/gdk.h>
 #include <adwaita.h>
 #include <stdbool.h>
