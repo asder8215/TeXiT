@@ -153,6 +153,7 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
 
         // Freed in `save_response()`
         SaveResponseParams* params = malloc(sizeof(SaveResponseParams));
+        params->tab_view = tab_view;
         params->buffer = self;
         params->close_tab = close_tab;
         gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(save_response), params);
