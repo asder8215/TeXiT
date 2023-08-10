@@ -95,20 +95,9 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         const char* ip = gtk_editable_get_text(params->entries.connect_ip);
         int port = atoi(gtk_editable_get_text(params->entries.connect_port));
 
-        // The client should attempt to close all tabs and hide file-buttons before connecting
-        // Hide buttons
-        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_new), false);
-        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_open), false);
-        gtk_widget_set_visible(GTK_WIDGET(params->file_buttons->file_save), false);
-
-        // Close all tabs the user previously had open
-        g_signal_handlers_disconnect_by_func(params->tab_view, close_tab_page, NULL);
-        while (adw_tab_view_get_n_pages(params->tab_view))
-            adw_tab_view_close_page(params->tab_view, adw_tab_view_get_nth_page(params->tab_view, 0));
-
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params->tab_view)) {
+        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
@@ -135,10 +124,6 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
-    if(gtk_widget_get_visible(GTK_WIDGET(params->label))){
-        gtk_widget_set_visible(GTK_WIDGET(params->label), false);
-        gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
-    }
     new_tab_page(params->tab_view, "Untitled", NULL);
 }
 
@@ -156,13 +141,13 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
             exit(0);
         }
         
-        // Replace the start label with the TabPage
-        // label is made invisible because the binding is bidierctional.
-        gtk_widget_set_visible(GTK_WIDGET(params->tab_view), true);
+        // replace content of the buffer with file content.
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
         // Set to false because `gtk_text_buffer_set_text()` emmits signal "changed".
         editor_buffer_set_edited(buffer, false);
+        // update title and set indicator icon to nothing
         adw_tab_page_set_title(editor_buffer_get_page(buffer), g_file_get_basename(file));
+        adw_tab_page_set_indicator_icon(editor_buffer_get_page(buffer), NULL);
         
         g_object_unref(file);
         free(content);

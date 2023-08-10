@@ -16,7 +16,12 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
 
     adw_tab_page_set_title(rtrn.page, title);
     adw_tab_page_set_icon(rtrn.page, g_themed_icon_new("text-x-generic-symbolic"));
-
+    
+    // set visibility of the tab view to on upon first new tab.
+    if(!gtk_widget_get_visible(GTK_WIDGET(tab_view))){
+        gtk_widget_set_visible(GTK_WIDGET(tab_view), true);
+    }
+    
 	return rtrn;
 }
 

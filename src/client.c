@@ -56,7 +56,7 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view){
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* file_buttons, GtkLabel* label){
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (client != NULL)
@@ -87,6 +87,23 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view)
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
+
+    // The client should attempt to close all tabs and hide file-buttons before connecting
+    // Hide buttons
+    gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_new), false);
+    gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_open), false);
+    gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_save), false);
+    
+    // Disconnect the signal handler to the tabs in order to close them all
+    // no matter if they had unsaved changes
+    gulong handler_id = g_signal_handler_find(tab_view, G_SIGNAL_MATCH_FUNC, -1, 0, NULL, close_tab_page, NULL);
+    g_signal_handler_disconnect(tab_view, handler_id);
+
+    // Close all tabs the user previously had open
+    while (adw_tab_view_get_n_pages(tab_view))
+        adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, 0));
+    gtk_widget_set_visible(GTK_WIDGET(tab_view), false);
+    gtk_label_set_text(label, "Waiting for host to create or open a new file.");
 
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
 
