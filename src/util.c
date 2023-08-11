@@ -72,6 +72,11 @@ void close_connection(GIOChannel* channel) {
     // Connnection doesnt have to be clsoed once channel is closed
 }
 
+void signal_disconnect(gpointer instance, gpointer callback) {
+    gulong handler_id = g_signal_handler_find(instance, G_SIGNAL_MATCH_FUNC, -1, 0, NULL, callback, NULL);
+    g_signal_handler_disconnect(instance, handler_id);
+}
+
 
 inline void add_tab_free(AddTab self) {
     free((void*)self.title);

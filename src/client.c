@@ -37,7 +37,7 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
         //printf("%lu\n", array_list_length(arr));
         for(size_t i = 0; i < array_list_length(arr); i++){
             AddTab* tab_info = array_list_get_idx(arr, i);
-            Page page = new_tab_page(tab_view, tab_info->title, NULL);
+            ClientPage page = new_client_tab(tab_view, tab_info->title);
             gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
         }
     }
@@ -85,8 +85,7 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
     
     // Disconnect the signal handler to the tabs in order to close them all
     // no matter if they had unsaved changes
-    gulong handler_id = g_signal_handler_find(tab_view, G_SIGNAL_MATCH_FUNC, -1, 0, NULL, close_tab_page, NULL);
-    g_signal_handler_disconnect(tab_view, handler_id);
+    signal_disconnect(tab_view, close_tab_page);
 
     // Close all tabs the user previously had open
     while (adw_tab_view_get_n_pages(tab_view))

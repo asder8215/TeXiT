@@ -3,6 +3,19 @@
 #include "tab-page.h"
 #include <stdio.h>
 
+/// function for `new_tab_page` and `new_client_page` to achieve similar functionality.
+static void set_tab_page_props(AdwTabView* tab_view, GtkTextView* text_view, GtkScrolledWindow* scroller, AdwTabPage* page, const char* title) {
+    gtk_text_view_set_wrap_mode(text_view, GTK_WRAP_WORD);
+    gtk_scrolled_window_set_child(scroller, GTK_WIDGET(text_view));
+
+    adw_tab_page_set_title(page, title);
+    adw_tab_page_set_icon(page, g_themed_icon_new("text-x-generic-symbolic"));
+    
+    // set visibility of the tab view to on upon first new tab.
+    if (!gtk_widget_get_visible(GTK_WIDGET(tab_view)))
+        gtk_widget_set_visible(GTK_WIDGET(tab_view), true);
+}
+
 Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
     Widget scroller, text_view;
     Page rtrn;
@@ -11,16 +24,7 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
     rtrn.page = adw_tab_view_append(tab_view, scroller);
     rtrn.buffer = editor_buffer_new(filePath, rtrn.page);
     text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), text_view);
-
-    adw_tab_page_set_title(rtrn.page, title);
-    adw_tab_page_set_icon(rtrn.page, g_themed_icon_new("text-x-generic-symbolic"));
-    
-    // set visibility of the tab view to on upon first new tab.
-    if(!gtk_widget_get_visible(GTK_WIDGET(tab_view))){
-        gtk_widget_set_visible(GTK_WIDGET(tab_view), true);
-    }
+    set_tab_page_props(tab_view, GTK_TEXT_VIEW(text_view), GTK_SCROLLED_WINDOW(scroller), rtrn.page, title);
     
 	return rtrn;
 }
@@ -140,3 +144,14 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     return GDK_EVENT_STOP;
 }
 
+ClientPage new_client_tab(AdwTabView* tab_view, const char* title) {
+    ClientPage rtrn;
+    GtkScrolledWindow* scroller = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new());
+    GtkTextView* text_view = GTK_TEXT_VIEW(gtk_text_view_new());
+
+    rtrn.page = adw_tab_view_append(tab_view, GTK_WIDGET(scroller));
+    rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    set_tab_page_props(tab_view, text_view, scroller, rtrn.page, title);
+    
+	return rtrn;
+}

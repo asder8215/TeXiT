@@ -32,6 +32,9 @@ void send_message(GSocketConnection* connection, const char* msg);
 /// When the channel is closed, so is the connection (at least thats what it seems like).
 void close_connection(GIOChannel* channel);
 
+/// Disconnects a callback from **instance** that was added by `g_signal_connect`.
+void signal_disconnect(gpointer instance, gpointer callback);
+
 
 // JSON serialization/deserialization
 
