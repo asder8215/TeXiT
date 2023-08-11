@@ -9,25 +9,22 @@
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
 // ShareEnableParams* client_params = NULL;
-bool recreate_window = true;
+// bool recreate_window = true;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
-    if (msg == NULL) {
-        printf("(Client) Could not read channel\n");
-        if (!closed)
-            close_connection(channel);
-        closed = true;
-    }
 
     if (closed) {
         stop_client();
         return FALSE;
     }
-    // msg can't be NULL if closed is false
+    // msg == NULL but connection was not closed, happens when client reconnects.
+    // Dont know why, just ignore it.
+    if (msg == NULL)
+        return TRUE;
 
-    printf("(Client) Received message (%lu bytes): %s\n", strlen(msg), msg);
+    printf("(Client) Received message: %s\n", msg);
     
     // if (recreate_window) {
         
@@ -80,9 +77,6 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
         client = NULL;
         return Other;
     }
-    else {
-        printf("Connected successfully!\n");
-    }
 
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
@@ -113,8 +107,8 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
 void stop_client() {
     if (client != NULL) {
         printf("Stopping client.\n");
-        GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-        g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
+        // GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
+        // g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
         g_object_unref(connection);
         connection = NULL;
         g_object_unref(client);

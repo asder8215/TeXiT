@@ -39,20 +39,17 @@ static void remove_connection(GSocketConnection* target) {
 static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
-    if (msg == NULL) {
-        printf("(Server) Could not read channel\n");
-        if (!closed)
-            close_connection(channel);
-        closed = true;
-    }
     
     if (closed) {
         remove_connection(connection);
         return FALSE;
     }
-    // msg can't be NULL if closed is false
+    // Server getting NULL msg and connection not closed has never happened.
+    // But just in case, just ignore it.
+    if (msg == NULL)
+        return TRUE;
 
-    printf("(Server) Received message (%lu bytes): %s\n", strlen(msg), msg);
+    printf("(Server) Received message: %s\n", msg);
 
     g_free((void*)msg);
     return TRUE;
@@ -68,7 +65,7 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     server_connections_count++;
     g_object_ref(connection);
 
-    printf("New connection\n");
+    printf("(Server) New connection (%p)\n", connection);
 
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
