@@ -1,5 +1,6 @@
 #include "util.h"
 #include "arraylist.h"
+#include "buffer.h"
 #include "json_tokener.h"
 #include "tab-page.h"
 #include "json.h"
@@ -129,13 +130,7 @@ array_list* deserialize_add_tabs(json_object* list) {
         json_object* tmp_obj;
         json_object* add_tab_obj = json_object_array_get_idx(list, i);
         AddTab* add_tab = malloc(sizeof(AddTab));
-
-        // tmp_obj = json_object_object_get(add_tab_obj, "tab-idx");
-        // if (tmp_obj == NULL || json_object_get_type(tmp_obj) != json_type_int) {
-        //     free(add_tab);
-        //     array_list_free(rtrn);
-        //     return NULL;
-        // }
+        
         json_get_or_fail(int, "tab-idx", add_tab_obj, add_tab);
         add_tab->tab_idx = json_object_get_uint64(tmp_obj);
         
@@ -158,16 +153,10 @@ const char* serialize_add_tabs_from_view(AdwTabView* tab_view) {
 
     for (size_t i = 0; i < len; i++) {
         Page page = get_nth_page(tab_view, i);
-        GtkTextBuffer* buffer = GTK_TEXT_BUFFER(page.buffer);
-        GtkTextIter start;
-        GtkTextIter end;
-        gtk_text_buffer_get_start_iter(buffer, &start);
-        gtk_text_buffer_get_end_iter(buffer, &end);
-
         AddTab add_tab;
         add_tab.tab_idx = i;
         add_tab.title = strdup(adw_tab_page_get_title(page.page));
-        add_tab.content = gtk_text_buffer_get_text(buffer, &start, &end, true);
+        add_tab.content = editor_buffer_get_content(page.buffer);
 
         add_tabs[i] = add_tab;
     }

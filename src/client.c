@@ -1,6 +1,7 @@
 #include "client.h"
-#include "json_types.h"
+#include "tab-page.h"
 #include "util.h"
+#include "json_types.h"
 #include <stdio.h>
 #include <gio/gio.h>
 #include <gdk/gdk.h>

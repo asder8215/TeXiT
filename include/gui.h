@@ -3,7 +3,6 @@
 
 #include <gtk/gtk.h>
 #include <adwaita.h>
-#include "buffer.h"
 
 typedef GtkWidget* Widget;
 

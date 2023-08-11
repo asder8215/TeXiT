@@ -125,6 +125,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
 static void new_file_click(GtkButton* button, FileClickParams* params) {
     new_tab_page(params->tab_view, "Untitled", NULL);
+    server_new_tab(params->tab_view);
 }
 
 static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
@@ -148,6 +149,8 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
         // update title and set indicator icon to nothing
         adw_tab_page_set_title(editor_buffer_get_page(buffer), g_file_get_basename(file));
         adw_tab_page_set_indicator_icon(editor_buffer_get_page(buffer), NULL);
+        // Server sends the new file to its clients
+        server_new_tab(params->tab_view);
         
         g_object_unref(file);
         free(content);

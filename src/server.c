@@ -1,4 +1,5 @@
 #include "server.h"
+#include "buffer.h"
 #include "gui.h"
 #include "util.h"
 #include <stdio.h>
@@ -118,4 +119,24 @@ void stop_server() {
         server_connections_count = 0;
         server = NULL;
     }
+}
+
+void server_new_tab(AdwTabView* tab_view) {
+    // Function can be called before server has started.
+    if (server == NULL)
+        return;
+
+    Page page;
+    AddTab* new_tab = malloc(sizeof(AddTab));
+    new_tab->tab_idx = adw_tab_view_get_n_pages(tab_view) - 1;
+
+    page = get_nth_page(tab_view, new_tab->tab_idx);
+    new_tab->title = strdup(adw_tab_page_get_title(page.page));
+    new_tab->content = editor_buffer_get_content(page.buffer);
+
+    // Send the message to all connections
+    const char* msg = serialize_add_tabs(new_tab, 1);
+    for (unsigned int i = 0; i < server_connections_count; i++)
+        send_message(server_connections[i], msg);
+    free((void*)msg);
 }

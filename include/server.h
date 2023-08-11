@@ -2,6 +2,7 @@
 #define __SERVER_H__
 
 #include "util.h"
+#include "tab-page.h"
 
 #define MAX_CONNECTIONS 3
 
@@ -10,5 +11,9 @@
 StartStatus start_server(int port, AdwTabView* tab_view);
 /// Wonder what this does ?
 void stop_server();
+
+/// Send message to clients to append a new tab and its contents.
+/// The new tab is always the last tab of **tab_view**.
+void server_new_tab(AdwTabView* tab_view);
 
 #endif // __SERVER_H__

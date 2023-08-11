@@ -3,7 +3,6 @@
 
 #include "json.h"
 #include "gui.h"
-#include "tab-page.h"
 #include <gdk/gdk.h>
 #include <adwaita.h>
 #include <stdbool.h>
@@ -42,9 +41,9 @@ typedef struct {
     const char* title;
     const char* content;
 } AddTab;
-// /// Copies **title** and **content**.
 // AddTab add_tab_new(unsigned int tab_idx, const char* title, const char* content);
 void add_tab_free(AddTab self);
+
 
 /// Has ownership of title.
 /// Should be malloced and freed.

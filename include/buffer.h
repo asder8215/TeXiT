@@ -24,6 +24,10 @@ AdwTabPage* editor_buffer_get_page(EditorBuffer* self);
 bool editor_buffer_get_edited(EditorBuffer* self);
 void editor_buffer_set_edited(EditorBuffer* self, bool value);
 
+/// Convenience function to get the content of the inner GtkTextBuffer using `gtk_text_buffer_get_text`.
+/// Caller takes ownership or return value and must `free` it.
+const char* editor_buffer_get_content(EditorBuffer* self);
+
 /// Saves the contents of *self* to the file at *self.file_path*, overwriting the file.
 /// Sets the title of *self->tab_page* to the name of the file that was saved, or closes it if *close_tab* is true.
 /// **close_tab** is `true` if this function is called from a `AdwTabView::close-page` callback,

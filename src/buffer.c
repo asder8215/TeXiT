@@ -85,6 +85,15 @@ AdwTabPage* editor_buffer_get_page(EditorBuffer* self){
     return self->tab_page;
 }
 
+const char* editor_buffer_get_content(EditorBuffer* self) {
+    GtkTextBuffer* buffer = GTK_TEXT_BUFFER(self);
+    GtkTextIter start;
+    GtkTextIter end;
+    gtk_text_buffer_get_start_iter(buffer, &start);
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    return gtk_text_buffer_get_text(buffer, &start, &end, true);
+}
+
 // Takes ownership of *file*. *buffer* is a reference.
 static void write_file(GFile* file, GtkTextBuffer* buffer) {
     // Fetching the current content in the file
