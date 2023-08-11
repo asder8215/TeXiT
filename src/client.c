@@ -26,27 +26,21 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 
     printf("(Client) Received message: %s\n", msg);
     
-    // if (recreate_window) {
-        
-    //     recreate_window = false;
-    // }
-    
+    json_object* tmp = NULL;
     json_object* jobj = json_tokener_parse(msg);
 
-    // if (msg_type == json_type_object && json_object_key == "add-tabs")
-    //     list = jobj["add-tabs"]
-    //     array_list* arr = deserialize_add_tabs(list);
-    
-    /**
-    for(size_t i = 0; i < array_list_length(arr); i++){
-        AddTab* tab_info = array_list_get_idx(arr, i);
-        Page page = new_tab_page(client_params->tab_view, tab_info->title, NULL);
-        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
+    // recreates the window from the server to the client
+    if(json_object_object_get_ex(jobj, "add-tabs", &tmp)){
+        //printf("%s\n", json_object_to_json_string_ext(tmp, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED));
+        array_list* arr = deserialize_add_tabs(tmp);
+        //printf("%lu\n", array_list_length(arr));
+        for(size_t i = 0; i < array_list_length(arr); i++){
+            AddTab* tab_info = array_list_get_idx(arr, i);
+            Page page = new_tab_page(tab_view, tab_info->title, NULL);
+            gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
+        }
     }
-    **/
 
-    //adw_tab_view_close_page_finish(client_params->tab_view, );
-    //adw_tab_view_close_page(client_params->tab_view, page.page);
     json_object_put(jobj);
     g_free((void*)msg);
     return TRUE;
