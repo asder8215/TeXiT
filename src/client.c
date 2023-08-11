@@ -10,7 +10,7 @@
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
 // ShareEnableParams* client_params = NULL;
-// bool recreate_window = true;
+bool close_from_client = true;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
     bool closed = false;
@@ -43,12 +43,24 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
     }
     else if(json_object_object_get_ex(jobj, "remove-tab", &tmp)){
         unsigned int tab_idx = json_object_get_uint64(tmp);
+        close_from_client = false;
         adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, tab_idx));
     }
 
     json_object_put(jobj);
     g_free((void*)msg);
     return TRUE;
+}
+
+static gboolean client_close_tab_page(AdwTabView* tab_view, AdwTabPage* page, gpointer user_data){
+    if(close_from_client){
+        return GDK_EVENT_STOP;
+    }
+    else{
+        //adw_tab_view_close_page_finish(tab_view, page, true);
+        close_from_client = true;
+        return GDK_EVENT_PROPAGATE;
+    }
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
@@ -96,6 +108,8 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
         adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, 0));
     gtk_widget_set_visible(GTK_WIDGET(tab_view), false);
     gtk_label_set_text(label, "Waiting for host to create or open a new file.");
+
+    g_signal_connect(tab_view, "close-page", G_CALLBACK(client_close_tab_page), NULL);
 
     g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
 
