@@ -1,7 +1,7 @@
 #include "server.h"
 #include "buffer.h"
+#include "tab-page.h"
 #include "gui.h"
-#include "util.h"
 #include <stdio.h>
 #include <gio/gio.h>
 #include <gdk/gdk.h>
@@ -137,6 +137,18 @@ void server_new_tab(AdwTabView* tab_view) {
     // Send the message to all connections
     const char* msg = serialize_add_tabs(new_tab, 1);
     for (unsigned int i = 0; i < server_connections_count; i++)
+        send_message(server_connections[i], msg);
+    free((void*)msg);
+}
+
+void server_remove_tab(AdwTabView* tab_view, AdwTabPage* target_page){
+    if (server == NULL)
+        return;
+    
+    unsigned int tab_idx = adw_tab_view_get_page_position(tab_view, target_page);
+    const char* msg = serialize_remove_tab(tab_idx);
+
+    for(unsigned int i = 0; i < server_connections_count; i++)
         send_message(server_connections[i], msg);
     free((void*)msg);
 }

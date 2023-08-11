@@ -41,6 +41,10 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
             gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
         }
     }
+    else if(json_object_object_get_ex(jobj, "remove-tab", &tmp)){
+        unsigned int tab_idx = json_object_get_uint64(tmp);
+        adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, tab_idx));
+    }
 
     json_object_put(jobj);
     g_free((void*)msg);

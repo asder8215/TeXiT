@@ -1,6 +1,6 @@
-#include "buffer.h"
 #include "gui.h"
 #include "tab-page.h"
+#include "server.h"
 #include <stdio.h>
 
 Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath) {
@@ -60,12 +60,16 @@ static void close_unsaved_tab_response(AdwMessageDialog* dialog, GAsyncResult* r
     EditorBuffer* buffer = page_get_buffer(params->target_page);
 
     // save response
-    if (strcmp(response, "save") == 0)
+    if (strcmp(response, "save") == 0) {
         // calls tab_view.close_page_finish(true) if file was successfully saved
+        server_remove_tab(params->tab_view, params->target_page);
         editor_buffer_save(buffer, params->tab_view, params->window, true);
+    }
     // close response
-    else if (strcmp(response, "close") == 0) 
+    else if (strcmp(response, "close") == 0) { 
+        server_remove_tab(params->tab_view, params->target_page);
         adw_tab_view_close_page_finish(params->tab_view, params->target_page, true);
+    }
     // cancel response
     else if (strcmp(response, "cancel") == 0)
         adw_tab_view_close_page_finish(params->tab_view, params->target_page, false);
@@ -130,6 +134,7 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     }
     // Close the tab if nothing's changed.
     else{
+        server_remove_tab(tab_view, page);
         adw_tab_view_close_page_finish(tab_view, page, true);
         if (adw_tab_view_get_n_pages(tab_view) == 0)
             gtk_widget_set_visible(GTK_WIDGET(tab_view), false);

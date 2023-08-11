@@ -96,10 +96,6 @@ typedef enum {
 /// **list** is a borrowed reference.
 /// Returns NULL if deserialization fails.
 array_list* deserialize_add_tabs(json_object* list);
-/// Deserialize a json list into a **list of Tab Indexes** (unsigned int).
-/// **json** is a borrowed reference.
-/// array_list.array NULL if deserialization fails.
-array_list deserialize_remove_tabs(const char* json);
 /// Deserialize a json list into a **list of RemoveTab** structs.
 /// **json** is a borrowed reference.
 /// array_list.array NULL if deserialization fails.
@@ -128,10 +124,10 @@ const char* serialize_add_tabs_from_view(AdwTabView* tab_view);
 /// Function takes ownership of **add_tabs** and frees it.
 /// Caller takes ownership of return value and must free it.
 const char* serialize_add_tabs(AddTab* add_tabs, size_t len);
-/// Serialize an **array of Tab indexes** into JSON to be sent as a message.
-/// Function takes ownership of **tab_idxs** and frees it.
+/// Serialize a tab into JSON to be sent as a message.
+/// Function takes ownership of **tab_idx** and frees it.
 /// Caller takes ownership of return value and must free it.
-const char* serialize_remove_tabs(unsigned int* tab_idxs, size_t len);
+const char* serialize_remove_tab(unsigned int tab_idx);
 /// Serialize an **array of RenameTab** structs into JSON to be sent as a message.
 /// Function takes ownership of **rename_tabs** and frees it.
 /// Caller takes ownership of return value and must free it.

@@ -8,14 +8,13 @@
 #include "json_types.h"
 #include <stdio.h>
 
-/// JSON value keys used to ser/de messages.
+/// JSON value keys used for creating and accessing json objects.
 static const char* ADD_TABS_KEY = "add-tabs";
-static const char* RM_TABS_KEY = "remove-tabs";
+static const char* RM_TAB_KEY = "remove-tab";
 static const char* RENAME_TABS_KEY = "rename-tabs";
 static const char* DEL_CONTENT_KEY = "delete-content";
 static const char* REPLACE_CONTENT_KEY = "replace-content";
 static const char* INSERT_CONTENT_KEY = "insert-content";
-
 
 const char* read_channel(GIOChannel* channel, bool* closed) {
     const char* msg = NULL;
@@ -187,3 +186,15 @@ const char* serialize_add_tabs(AddTab* add_tabs, size_t len) {
     free(add_tabs);
     return rtrn;
 }
+
+const char* serialize_remove_tab(unsigned int tab_idx){
+    json_object* obj = json_object_new_object();
+    const char* rtrn = NULL;
+    
+    json_object_object_add(obj, RM_TAB_KEY, json_object_new_uint64(tab_idx));
+    rtrn = strdup(json_object_to_json_string(obj));
+
+    json_object_put(obj);
+    return rtrn;
+}
+

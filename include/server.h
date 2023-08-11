@@ -2,7 +2,7 @@
 #define __SERVER_H__
 
 #include "util.h"
-#include "tab-page.h"
+//#include "tab-page.h"
 
 #define MAX_CONNECTIONS 3
 
@@ -15,5 +15,8 @@ void stop_server();
 /// Send message to clients to append a new tab and its contents.
 /// The new tab is always the last tab of **tab_view**.
 void server_new_tab(AdwTabView* tab_view);
+
+/// Send message to clients to remove a specific tab page.
+void server_remove_tab(AdwTabView* tab_view, AdwTabPage* tab_page);
 
 #endif // __SERVER_H__
