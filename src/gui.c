@@ -52,11 +52,10 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         g_signal_connect(dialog, "response", G_CALLBACK(share_enable_response), enable_params);
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
-        if (connection_state == Server) {
+        if (connection_state == Server)
             stop_server();
-        } else if (connection_state == Client) {
-            stop_client(params->tab_view, params->file_buttons, params->label, params->window);
-        }
+        else if (connection_state == Client)
+            stop_client();
         gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
         connection_state = Off;
     }
@@ -227,11 +226,10 @@ void main_window(AdwApplication *app) {
 }
 
 gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params) {
-    if (connection_state == Server) {
+    if (connection_state == Server)
         stop_server();
-    } else if (connection_state == Client) {
-        stop_client(params->share_click_params->tab_view, params->share_click_params->file_buttons, params->share_click_params->label, params->share_click_params->window);
-    }
+    else if (connection_state == Client)
+        stop_client();
     free(params->file_click_params);
     free(params->share_click_params);
     free(params->file_buttons);
