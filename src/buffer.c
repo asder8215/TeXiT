@@ -47,7 +47,10 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
 }
 
 static void editor_buffer_changed(EditorBuffer* buffer, AdwTabView* tab_view) {
-    server_change_tab_content(editor_buffer_get_content(buffer), adw_tab_view_get_page_position(tab_view, buffer->tab_page));
+    TabContent tab_content;
+    tab_content.tab_idx = adw_tab_view_get_page_position(tab_view, buffer->tab_page);
+    tab_content.content = editor_buffer_get_content(buffer);
+    server_change_tab_content(tab_content);
     if (!buffer->edited) {
         adw_tab_page_set_indicator_icon(buffer->tab_page, g_themed_icon_new("media-record-symbolic"));
         buffer->edited = true;

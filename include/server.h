@@ -20,6 +20,6 @@ void server_new_tab(AdwTabView* tab_view);
 void server_remove_tab(AdwTabView* tab_view, AdwTabPage* tab_page);
 
 /// Send content of a tab page to clients.
-void server_change_tab_content(const char* content, unsigned int tab_idx);
+void server_change_tab_content(TabContent tab_content);
 
 #endif // __SERVER_H__

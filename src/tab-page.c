@@ -152,13 +152,16 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     return GDK_EVENT_STOP;
 }
 
+/// Callback for when Client types into the TextBuffer of a tab.
 static void client_buffer_changed(GtkTextBuffer* buffer, AdwTabView* tab_view){
+    AdwTabPage* page = adw_tab_view_get_selected_page(tab_view);
+    TabContent tab_content;
     GtkTextIter start, end;
     gtk_text_buffer_get_start_iter(buffer, &start);
     gtk_text_buffer_get_end_iter(buffer, &end);
-    const char* content = gtk_text_buffer_get_text(buffer, &start, &end, true);
-    AdwTabPage* page = adw_tab_view_get_selected_page(tab_view);
-    client_change_tab_content(content, adw_tab_view_get_page_position(tab_view, page));
+    tab_content.tab_idx = adw_tab_view_get_page_position(tab_view, page);
+    tab_content.content = gtk_text_buffer_get_text(buffer, &start, &end, true);
+    client_change_tab_content(tab_content);
 }
 
 GtkTextBuffer* client_page_get_buffer(AdwTabPage* page) {
@@ -184,4 +187,10 @@ ClientPage new_client_tab(AdwTabView* tab_view, const char* title) {
     g_signal_connect(rtrn.buffer, "changed", G_CALLBACK(client_buffer_changed), tab_view);
 
 	return rtrn;
+}
+ClientPage get_nth_client_tab(AdwTabView* tab_view, size_t n) {
+    ClientPage page;
+    page.page = adw_tab_view_get_nth_page(tab_view, n);
+    page.buffer = client_page_get_buffer(page.page);
+    return page;
 }

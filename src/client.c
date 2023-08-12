@@ -31,9 +31,8 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 
     // recreates the window from the server to the client
     if(json_object_object_get_ex(jobj, "add-tabs", &tmp)){
-        //printf("%s\n", json_object_to_json_string_ext(tmp, JSON_C_TO_STRING_PRETTY | JSON_C_TO_STRING_SPACED));
         array_list* arr = deserialize_add_tabs(tmp);
-        //printf("%lu\n", array_list_length(arr));
+        // Append each tab received to the AdwTabView
         for(size_t i = 0; i < array_list_length(arr); i++){
             AddTab* tab_info = array_list_get_idx(arr, i);
             ClientPage page = new_client_tab(tab_view, tab_info->title);
@@ -47,17 +46,10 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
         adw_tab_view_close_page_finish(tab_view, page, true);
     }
     else if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
-        //unsigned int tab_idx = json_
-        //printf("%s\n", json_object_to_json_string(tmp));
-        json_object *tab_idx_json, *content_json;
-        json_object_object_get_ex(tmp, "tab-idx", &tab_idx_json);
-        json_object_object_get_ex(tmp, "content", &content_json);
-        unsigned int tab_idx = json_object_get_uint64(tab_idx_json);
-        const char* content = json_object_get_string(content_json);
-        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view, tab_idx);
-        GtkTextBuffer* buffer = client_page_get_buffer(page);
+        TabContent* tab_content = deserialize_tab_content(tmp);
+        ClientPage page = get_nth_client_tab(tab_view, tab_content->tab_idx);
         change_from_client = false;
-        gtk_text_buffer_set_text(buffer, content, -1);
+        gtk_text_buffer_set_text(page.buffer, tab_content->content, -1);
     }
 
     json_object_put(jobj);
@@ -134,9 +126,9 @@ void stop_client() {
     }
 }
 
-void client_change_tab_content(const char* content, unsigned int tab_idx){
+void client_change_tab_content(TabContent tab_content){
     if(change_from_client){
-        const char* msg = serialize_tab_content(content, tab_idx);
+        const char* msg = serialize_tab_content(tab_content);
         send_message(connection, msg);
         free((void*)msg);
     }

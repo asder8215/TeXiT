@@ -7,6 +7,6 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
 
 void stop_client();
 
-void client_change_tab_content(const char* content, unsigned int tab_idx);
+void client_change_tab_content(TabContent tab_content);
 
 #endif // __CLIENT_H__

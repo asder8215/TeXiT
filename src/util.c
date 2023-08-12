@@ -84,9 +84,8 @@ inline void add_tab_free(AddTab self) {
 }
 /// Necessary to be able to use AddTab in array_list.
 void add_tab_free_ptr(void* ptr) {
-    AddTab* self = ptr;
-    add_tab_free(*self);
-    free((void*)self);
+    add_tab_free(*(AddTab*)ptr);
+    free(ptr);
 }
 inline void rename_tab_free(RenameTab self) {
     free((void*)self.title);
@@ -95,6 +94,9 @@ inline void replace_content_free(ReplaceContent self) {
     free((void*)self.content);
 }
 inline void insert_content_free(InsertContent self) {
+    free((void*)self.content);
+}
+inline void tab_content_free(TabContent self) {
     free((void*)self.content);
 }
 
@@ -112,8 +114,15 @@ inline void insert_content_free(InsertContent self) {
 //     field_container->target_field = json_object_get_##field_type(tmp_obj);
 
 /// Assign the value of src_obj["key"] to tmp_obj if it is of a certain type.
-/// Makes the function it is called in return NULL and frees values if it fails.
-#define json_get_or_fail(type, key, src_obj, free_val)                          \
+/// Makes the function it is called in return NULL and frees the malloced return value if it fails.
+#define json_get_or_fail(type, key, src_obj)                                    \
+    tmp_obj = json_object_object_get(src_obj, key);                             \
+    if (tmp_obj == NULL || json_object_get_type(tmp_obj) != json_type_##type) { \
+        free(rtrn);                                                             \
+        return NULL;                                                            \
+    }
+/// Like `json_get_or_fail`, but the return value is a list and also frees a malloced value.
+#define json_get_or_fail_list(type, key, src_obj, free_val)                     \
     tmp_obj = json_object_object_get(src_obj, key);                             \
     if (tmp_obj == NULL || json_object_get_type(tmp_obj) != json_type_##type) { \
         free(free_val);                                                         \
@@ -136,17 +145,32 @@ array_list* deserialize_add_tabs(json_object* list) {
         json_object* add_tab_obj = json_object_array_get_idx(list, i);
         AddTab* add_tab = malloc(sizeof(AddTab));
         
-        json_get_or_fail(int, "tab-idx", add_tab_obj, add_tab);
+        json_get_or_fail_list(int, "tab-idx", add_tab_obj, add_tab);
         add_tab->tab_idx = json_object_get_uint64(tmp_obj);
         
-        json_get_or_fail(string, "title", add_tab_obj, add_tab);
+        json_get_or_fail_list(string, "title", add_tab_obj, add_tab);
         add_tab->title = json_object_get_string(tmp_obj);
 
-        json_get_or_fail(string, "content", add_tab_obj, add_tab);
+        json_get_or_fail_list(string, "content", add_tab_obj, add_tab);
         add_tab->content = json_object_get_string(tmp_obj);
 
         array_list_add(rtrn, add_tab);
     }
+
+    return rtrn;
+}
+
+TabContent* deserialize_tab_content(json_object* obj) {
+    if (obj == NULL || json_object_get_type(obj) != json_type_object)
+        return NULL;
+
+    json_object* tmp_obj;
+    TabContent* rtrn = malloc(sizeof(TabContent));
+
+    json_get_or_fail(int, "tab-idx", obj);
+    rtrn->tab_idx = json_object_get_uint64(tmp_obj);
+    json_get_or_fail(string, "content", obj);
+    rtrn->content = json_object_get_string(tmp_obj);
 
     return rtrn;
 }
@@ -193,7 +217,7 @@ const char* serialize_add_tabs(AddTab* add_tabs, size_t len) {
     return rtrn;
 }
 
-const char* serialize_remove_tab(unsigned int tab_idx){
+const char* serialize_remove_tab(TabIdx tab_idx){
     json_object* obj = json_object_new_object();
     const char* rtrn = NULL;
     
@@ -206,19 +230,20 @@ const char* serialize_remove_tab(unsigned int tab_idx){
 
 // TODO: This function may be deprecated if a better solution is found to changing
 // content on both server and client side.
-const char* serialize_tab_content(const char* content, unsigned int tab_idx){
+const char* serialize_tab_content(TabContent tab_content){
     json_object* obj = json_object_new_object();
     json_object* inner_json = json_object_new_object();
     const char* rtrn = NULL;
 
-    json_object_object_add(inner_json, "content", json_object_new_string(content));
-    json_object_object_add(inner_json, "tab-idx", json_object_new_uint64(tab_idx));
+    json_object_object_add(inner_json, "content", json_object_new_string(tab_content.content));
+    json_object_object_add(inner_json, "tab-idx", json_object_new_uint64(tab_content.tab_idx));
 
     json_object_object_add(obj, TAB_CONTENT_KEY, inner_json);
     rtrn = strdup(json_object_to_json_string(obj));
 
     //json_object_put(inner_json);
     json_object_put(obj);
+    tab_content_free(tab_content);
 
     return rtrn;
 }

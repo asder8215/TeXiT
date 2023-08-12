@@ -28,6 +28,7 @@ typedef struct {
 GtkTextBuffer* client_page_get_buffer(AdwTabPage* page);
 /// Like `new_tab_page`, but uses a normal `GtkTextBuffer`.
 ClientPage new_client_tab(AdwTabView* tab_view, const char* title);
+ClientPage get_nth_client_tab(AdwTabView* tab_view, size_t i);
 
 #endif
 

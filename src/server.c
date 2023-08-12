@@ -15,14 +15,14 @@ unsigned int server_connections_count = 0;
 typedef struct {
     GSocketConnection* connection;
     AdwTabView* tab_view;
-} TabViewConnection;
+} MessageReadParams;
 
-static void remove_connection(TabViewConnection* tab_view_with_connection) {
+static void remove_connection(GSocketConnection* connection) {
     unsigned int i;
     bool found = false;
     // Look for target connection in the array
     for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if (server_connections[i] == tab_view_with_connection->connection) {
+        if (server_connections[i] == connection) {
             found = true;
             break;
         }
@@ -39,16 +39,16 @@ static void remove_connection(TabViewConnection* tab_view_with_connection) {
     server_connections[MAX_CONNECTIONS - 1] = NULL;
     server_connections_count--;
 
-    g_object_unref(tab_view_with_connection->connection);
-    free(tab_view_with_connection);
+    g_object_unref(connection);
 }
 
-static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, TabViewConnection* tab_view_with_connection) {
+static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, MessageReadParams* params) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
     
     if (closed) {
-        remove_connection(tab_view_with_connection);
+        remove_connection(params->connection);
+        free(params);
         return FALSE;
     }
     // Server getting NULL msg and connection not closed has never happened.
@@ -61,17 +61,14 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
     json_object* tmp;
     json_object* jobj = json_tokener_parse(msg);
 
+    // Interpret the message
     if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
-        //unsigned int tab_idx = json_
-        //printf("%s\n", json_object_to_json_string(tmp));
-        json_object *tab_idx_json, *content_json;
-        json_object_object_get_ex(tmp, "tab-idx", &tab_idx_json);
-        json_object_object_get_ex(tmp, "content", &content_json);
-        unsigned int tab_idx = json_object_get_uint64(tab_idx_json);
-        const char* content = json_object_get_string(content_json);
-        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view_with_connection->tab_view, tab_idx);
-        EditorBuffer* buffer = page_get_buffer(page);
-        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
+        TabContent* tab_content = deserialize_tab_content(tmp);
+        Page page = get_nth_page(params->tab_view, tab_content->tab_idx);
+        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_content->content, -1);
+
+        tab_content_free(*tab_content);
+        free(tab_content);
     }
     
     json_object_put(jobj);
@@ -95,10 +92,10 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
     
-    TabViewConnection* tab_view_with_connection = malloc(sizeof(TabViewConnection));
-    tab_view_with_connection->connection = connection;
-    tab_view_with_connection->tab_view = tab_view;
-    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, tab_view_with_connection);
+    MessageReadParams* params = malloc(sizeof(MessageReadParams));
+    params->connection = connection;
+    params->tab_view = tab_view;
+    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, params);
 
     // Send currently opened tabs
     const char* msg = serialize_add_tabs_from_view(tab_view);
@@ -180,14 +177,13 @@ void server_remove_tab(AdwTabView* tab_view, AdwTabPage* target_page){
     free((void*)msg);
 }
 
-void server_change_tab_content(const char* content, unsigned int tab_idx){
+void server_change_tab_content(TabContent tab_content){
     if (server == NULL)
         return;
     
-    const char* msg = serialize_tab_content(content, tab_idx);
+    const char* msg = serialize_tab_content(tab_content);
 
     for(unsigned int i = 0; i < server_connections_count; i++)
         send_message(server_connections[i], msg);
-
     free((void*)msg);
 }

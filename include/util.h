@@ -37,10 +37,11 @@ void signal_disconnect(gpointer instance, gpointer callback);
 
 
 // JSON serialization/deserialization
+typedef unsigned int TabIdx;
 
 /// Has ownership of title and content.
 typedef struct {
-    unsigned int tab_idx;
+    TabIdx tab_idx;
     const char* title;
     const char* content;
 } AddTab;
@@ -51,7 +52,7 @@ void add_tab_free(AddTab self);
 /// Has ownership of title.
 /// Should be malloced and freed.
 typedef struct {
-    unsigned int tab_idx;
+    TabIdx tab_idx;
     const char* title;
 } RenameTab;
 // RenameTab* rename_tab_new(unsigned int tab_idx, const char* title);
@@ -59,7 +60,7 @@ void rename_tab_free(RenameTab self);
 
 // Does not have to be malleced or freed
 typedef struct {
-    unsigned int tab_idx;
+    TabIdx tab_idx;
     size_t start_byte;
     size_t byte_length; 
 } DeleteContent;
@@ -68,7 +69,7 @@ typedef struct {
 /// Has ownership of content.
 /// Should be malloced and freed.
 typedef struct {
-    unsigned int tab_idx;
+    TabIdx tab_idx;
     size_t start_byte;
     size_t byte_length;
     const char* content;
@@ -79,12 +80,20 @@ void replace_content_free(ReplaceContent self);
 /// Has ownership of content.
 /// Should be malloced and freed.
 typedef struct {
-    unsigned int tab_idx;
+    TabIdx tab_idx;
     size_t start_byte;
     const char* content;
 } InsertContent;
 // InsertContent* insert_content_new(unsigned int tab_idx, size_t start_byte, const char* content);
 void insert_content_free(InsertContent self);
+
+/// Will be removed later in favor of Insert/Delete/Replace Content structs.
+/// The server/client will receive the entire contents of the TextBuffer on every change (we know that's not optimal).
+typedef struct {
+    TabIdx tab_idx;
+    const char* content;
+} TabContent;
+void tab_content_free(TabContent self);
 
 typedef enum {
     MSG_T_ADD_TABS,
@@ -95,26 +104,38 @@ typedef enum {
     MSG_T_INSERT_CONTENT
 } MessageType;
 
-/// Deserialize a json list into a **list of  AddTab** structs.
+/// Deserialize a JSON List into a **list of  AddTab** structs.
+/// Returns NULL if deserialization fails.
 /// **list** is a borrowed reference.
-/// Returns NULL if deserialization fails.
+/// Free the return value with `array_list_free`.
 array_list* deserialize_add_tabs(json_object* list);
-/// Deserialize a json list into a **list of RemoveTab** structs.
-/// **json** is a borrowed reference.
-/// array_list.array NULL if deserialization fails.
-array_list deserialize_rename_tabs(const char* json);
+/// Deserialize a JSON List into a **list of RemoveTab** structs.
 /// Returns NULL if deserialization fails.
-/// **json** is a borrowed reference.
-/// Caller takes ownership of return value and must free it.
-DeleteContent* deserialize_delete_content(const char* json);
+/// **list** is a borrowed reference.
+/// Free the return value with `array_list_free`.
+array_list* deserialize_rename_tabs(json_object* list);
+/// Deserialize a JSON Object into a **DeleteContent** struct.
 /// Returns NULL if deserialization fails.
-/// **json** is a borrowed reference.
+/// **obj** is a borrowed reference.
 /// Caller takes ownership of return value and must free it.
-ReplaceContent* deserialize_replace_content(const char* json);
+DeleteContent* deserialize_delete_content(json_object* obj);
+/// Deserialize a JSON Object into a **ReplaceContent** struct.
 /// Returns NULL if deserialization fails.
-/// **json** is a borrowed reference.
+/// **obj** is a borrowed reference.
 /// Caller takes ownership of return value and must free it.
-InsertContent* deserialize_insert_content(const char* json);
+ReplaceContent* deserialize_replace_content(json_object* obj);
+/// Deserialize a JSON Object into a **InsertContent** struct.
+/// Returns NULL if deserialization fails.
+/// **obj** is a borrowed reference.
+/// Caller takes ownership of return value and must free it.
+InsertContent* deserialize_insert_content(json_object* obj);
+
+/// Funciton will be removed with the TabContent struct.
+/// Deserialize a JSON Object into a **TabContent** struct.
+/// Returns NULL if deserialization fails.
+/// **obj** is a borrowed reference.
+/// Caller takes ownership of return value and must free it.
+TabContent* deserialize_tab_content(json_object* obj);
 
 /// TODO: maybe use array_list for the following?
 
@@ -145,9 +166,10 @@ const char* serialize_replace_content(ReplaceContent delete_content);
 /// Caller takes ownership of return value and must free it.
 const char* serialize_insert_content(InsertContent delete_content);
 
-/// Serializes the whole content of a specific tab page by idx
+/// Funciton will be removed with the TabContent struct.
+/// Serialize a **TabContent** struct into JSON to be sent as a message.
 /// Caller takes ownership of return value and must free it.
-const char* serialize_tab_content(const char* content, unsigned int tab_idx);
+const char* serialize_tab_content(TabContent tab_content);
 
 
 #endif // __UTIL_H__
