@@ -9,14 +9,22 @@
 
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
-bool change_from_client = true;
 
-static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
+typedef struct {
+    AdwTabView* tab_view;
+    FileButtons* file_buttons;
+    GtkLabel* label;
+    GtkWindow* window;
+} ClientParams;
+
+ClientParams* client_params;
+
+static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, ClientParams* client_params) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
 
     if (closed) {
-        stop_client();
+        stop_client(client_params->tab_view, client_params->file_buttons, client_params->label, client_params->window);
         return FALSE;
     }
     // msg == NULL but connection was not closed, happens when client reconnects.
@@ -35,20 +43,19 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
         // Append each tab received to the AdwTabView
         for(size_t i = 0; i < array_list_length(arr); i++){
             AddTab* tab_info = array_list_get_idx(arr, i);
-            ClientPage page = new_client_tab(tab_view, tab_info->title);
+            ClientPage page = new_client_tab(client_params->tab_view, tab_info->title);
             gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_info->content, -1);
         }
     }
     else if(json_object_object_get_ex(jobj, "remove-tab", &tmp)){
         unsigned int tab_idx = json_object_get_uint64(tmp);
-        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view, tab_idx);
-        adw_tab_view_close_page(tab_view, page);
-        adw_tab_view_close_page_finish(tab_view, page, true);
+        AdwTabPage* page = adw_tab_view_get_nth_page(client_params->tab_view, tab_idx);
+        adw_tab_view_close_page(client_params->tab_view, page);
+        adw_tab_view_close_page_finish(client_params->tab_view, page, true);
     }
     else if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
         TabContent* tab_content = deserialize_tab_content(tmp);
-        ClientPage page = get_nth_client_tab(tab_view, tab_content->tab_idx);
-        change_from_client = false;
+        ClientPage page = get_nth_client_tab(client_params->tab_view, tab_content->tab_idx);
         gtk_text_buffer_set_text(page.buffer, tab_content->content, -1);
     }
 
@@ -62,7 +69,7 @@ static gboolean client_close_tab_page(AdwTabView* tab_view, AdwTabPage* page, gp
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* file_buttons, GtkLabel* label){
+StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* file_buttons, GtkLabel* label, GtkWindow* window){
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (client != NULL)
@@ -109,16 +116,30 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
 
     g_signal_connect(tab_view, "close-page", G_CALLBACK(client_close_tab_page), NULL);
 
-    g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, tab_view);
+    client_params->tab_view = tab_view;
+    client_params->file_buttons = file_buttons;
+    client_params->label = label;
+    client_params->window = window;
+
+    g_io_add_watch(channel, G_IO_IN, (GIOFunc)client_message_read, client_params);
 
     return Success;
 }
 
-void stop_client() {
+void stop_client(AdwTabView* tab_view, FileButtons* file_buttons, GtkLabel* label, GtkWindow* window) {
     if (client != NULL) {
         printf("Stopping client.\n");
         // GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
         // g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
+        signal_disconnect(tab_view, client_close_tab_page);
+        while (adw_tab_view_get_n_pages(tab_view))
+            adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, 0));
+        g_signal_connect(tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
+        gtk_label_set_text(label, "Create a new file or open a file.");
+        gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_new), true);
+        gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_open), true);
+        gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_save), true);
+        client_params = NULL;
         g_object_unref(connection);
         connection = NULL;
         g_object_unref(client);
@@ -127,12 +148,7 @@ void stop_client() {
 }
 
 void client_change_tab_content(TabContent tab_content){
-    if(change_from_client){
-        const char* msg = serialize_tab_content(tab_content);
-        send_message(connection, msg);
-        free((void*)msg);
-    }
-    else{
-        change_from_client = true;
-    }
+    const char* msg = serialize_tab_content(tab_content);
+    send_message(connection, msg);
+    free((void*)msg);
 }

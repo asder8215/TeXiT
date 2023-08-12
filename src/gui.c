@@ -55,7 +55,7 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         if (connection_state == Server) {
             stop_server();
         } else if (connection_state == Client) {
-            stop_client();
+            stop_client(params->tab_view, params->file_buttons, params->label, params->window);
         }
         gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
         connection_state = Off;
@@ -97,7 +97,7 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label)) {
+        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label, params->window)) {
             case Success:
                 printf("Client started successfully.\n");
                 gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
@@ -230,7 +230,7 @@ gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params)
     if (connection_state == Server) {
         stop_server();
     } else if (connection_state == Client) {
-        stop_client();
+        stop_client(params->share_click_params->tab_view, params->share_click_params->file_buttons, params->share_click_params->label, params->share_click_params->window);
     }
     free(params->file_click_params);
     free(params->share_click_params);
