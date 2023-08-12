@@ -65,7 +65,14 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
     if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
         TabContent* tab_content = deserialize_tab_content(tmp);
         Page page = get_nth_page(params->tab_view, tab_content->tab_idx);
+        // Set the content of the TextBuffer
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_content->content, -1);
+        // Send the change to all other clients
+        for (unsigned int i = 0; i < server_connections_count; i++) {
+            GSocketConnection* connection = server_connections[i];
+            if (connection != params->connection)
+                send_message(server_connections[i], msg);
+        }
 
         tab_content_free(*tab_content);
         free(tab_content);

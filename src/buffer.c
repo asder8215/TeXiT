@@ -46,16 +46,22 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
     // free(file_path_param_spec);
 }
 
+/// Callback called whenever something changes in the TextBuffer,
+/// regardless of it was made by a Client or by the User.
 static void editor_buffer_changed(EditorBuffer* buffer, AdwTabView* tab_view) {
-    TabContent tab_content;
-    tab_content.tab_idx = adw_tab_view_get_page_position(tab_view, buffer->tab_page);
-    tab_content.content = editor_buffer_get_content(buffer);
-    server_change_tab_content(tab_content);
     if (!buffer->edited) {
         adw_tab_page_set_indicator_icon(buffer->tab_page, g_themed_icon_new("media-record-symbolic"));
         buffer->edited = true;
     }
 }
+/// When the user types something, the change must be sent to all of its clients.
+static void user_typed(EditorBuffer* buffer, AdwTabView* tab_view) {
+    TabContent tab_content;
+    tab_content.tab_idx = adw_tab_view_get_page_position(tab_view, buffer->tab_page);
+    tab_content.content = editor_buffer_get_content(buffer);
+    server_change_tab_content(tab_content);
+}
+
 
 static void editor_buffer_init(EditorBuffer* self) {
     self->edited = false;
@@ -71,6 +77,7 @@ EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, Adw
     buffer->file_path = file_path;
     buffer->tab_page = tab_page;
     g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), tab_view);
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "end-user-action", G_CALLBACK(user_typed), tab_view);
     return buffer;
 }
 
