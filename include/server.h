@@ -19,4 +19,7 @@ void server_new_tab(AdwTabView* tab_view);
 /// Send message to clients to remove a specific tab page.
 void server_remove_tab(AdwTabView* tab_view, AdwTabPage* tab_page);
 
+/// Send content of a tab page to clients.
+void server_change_tab_content(const char* content, unsigned int tab_idx);
+
 #endif // __SERVER_H__

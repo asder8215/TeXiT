@@ -12,7 +12,7 @@ G_DECLARE_FINAL_TYPE(EditorBuffer, editor_buffer, EDITOR, BUFFER, GtkTextBuffer)
 
 /// *file_path* is copied by this function, so it is only borrowed. Can be NULL.
 /// *tab_page* is a reference (Can't be NULL) to the `AdwTabPage` to which this buffer is in.
-EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page);
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, AdwTabView* tab_view);
 
 const char* editor_buffer_get_file_path(EditorBuffer* self);
 

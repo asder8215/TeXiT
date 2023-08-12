@@ -9,8 +9,7 @@
 
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
-// ShareEnableParams* client_params = NULL;
-bool close_from_client = true;
+bool change_from_client = true;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
     bool closed = false;
@@ -43,8 +42,22 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
     }
     else if(json_object_object_get_ex(jobj, "remove-tab", &tmp)){
         unsigned int tab_idx = json_object_get_uint64(tmp);
-        close_from_client = false;
-        adw_tab_view_close_page(tab_view, adw_tab_view_get_nth_page(tab_view, tab_idx));
+        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view, tab_idx);
+        adw_tab_view_close_page(tab_view, page);
+        adw_tab_view_close_page_finish(tab_view, page, true);
+    }
+    else if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
+        //unsigned int tab_idx = json_
+        //printf("%s\n", json_object_to_json_string(tmp));
+        json_object *tab_idx_json, *content_json;
+        json_object_object_get_ex(tmp, "tab-idx", &tab_idx_json);
+        json_object_object_get_ex(tmp, "content", &content_json);
+        unsigned int tab_idx = json_object_get_uint64(tab_idx_json);
+        const char* content = json_object_get_string(content_json);
+        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view, tab_idx);
+        GtkTextBuffer* buffer = client_page_get_buffer(page);
+        change_from_client = false;
+        gtk_text_buffer_set_text(buffer, content, -1);
     }
 
     json_object_put(jobj);
@@ -53,14 +66,7 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 static gboolean client_close_tab_page(AdwTabView* tab_view, AdwTabPage* page, gpointer user_data){
-    if(close_from_client){
-        return GDK_EVENT_STOP;
-    }
-    else{
-        //adw_tab_view_close_page_finish(tab_view, page, true);
-        close_from_client = true;
-        return GDK_EVENT_PROPAGATE;
-    }
+    return GDK_EVENT_STOP;
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
@@ -125,5 +131,16 @@ void stop_client() {
         connection = NULL;
         g_object_unref(client);
         client = NULL;
+    }
+}
+
+void client_change_tab_content(const char* content, unsigned int tab_idx){
+    if(change_from_client){
+        const char* msg = serialize_tab_content(content, tab_idx);
+        send_message(connection, msg);
+        free((void*)msg);
+    }
+    else{
+        change_from_client = true;
     }
 }

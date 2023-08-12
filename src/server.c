@@ -12,12 +12,17 @@ GSocketService* server = NULL;
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
 
-static void remove_connection(GSocketConnection* target) {
+typedef struct {
+    GSocketConnection* connection;
+    AdwTabView* tab_view;
+} TabViewConnection;
+
+static void remove_connection(TabViewConnection* tab_view_with_connection) {
     unsigned int i;
     bool found = false;
-    // Look for target in the array
+    // Look for target connection in the array
     for (i = 0; i < MAX_CONNECTIONS; i++) {
-        if (server_connections[i] == target) {
+        if (server_connections[i] == tab_view_with_connection->connection) {
             found = true;
             break;
         }
@@ -34,15 +39,16 @@ static void remove_connection(GSocketConnection* target) {
     server_connections[MAX_CONNECTIONS - 1] = NULL;
     server_connections_count--;
 
-    g_object_unref(target);
+    g_object_unref(tab_view_with_connection->connection);
+    free(tab_view_with_connection);
 }
 
-static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
+static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, TabViewConnection* tab_view_with_connection) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
     
     if (closed) {
-        remove_connection(connection);
+        remove_connection(tab_view_with_connection);
         return FALSE;
     }
     // Server getting NULL msg and connection not closed has never happened.
@@ -51,7 +57,24 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
         return TRUE;
 
     printf("(Server) Received message: %s\n", msg);
+    
+    json_object* tmp;
+    json_object* jobj = json_tokener_parse(msg);
 
+    if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
+        //unsigned int tab_idx = json_
+        //printf("%s\n", json_object_to_json_string(tmp));
+        json_object *tab_idx_json, *content_json;
+        json_object_object_get_ex(tmp, "tab-idx", &tab_idx_json);
+        json_object_object_get_ex(tmp, "content", &content_json);
+        unsigned int tab_idx = json_object_get_uint64(tab_idx_json);
+        const char* content = json_object_get_string(content_json);
+        AdwTabPage* page = adw_tab_view_get_nth_page(tab_view_with_connection->tab_view, tab_idx);
+        EditorBuffer* buffer = page_get_buffer(page);
+        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(buffer), content, -1);
+    }
+    
+    json_object_put(jobj);
     g_free((void*)msg);
     return TRUE;
 }
@@ -71,7 +94,11 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
-    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
+    
+    TabViewConnection* tab_view_with_connection = malloc(sizeof(TabViewConnection));
+    tab_view_with_connection->connection = connection;
+    tab_view_with_connection->tab_view = tab_view;
+    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, tab_view_with_connection);
 
     // Send currently opened tabs
     const char* msg = serialize_add_tabs_from_view(tab_view);
@@ -150,5 +177,17 @@ void server_remove_tab(AdwTabView* tab_view, AdwTabPage* target_page){
 
     for(unsigned int i = 0; i < server_connections_count; i++)
         send_message(server_connections[i], msg);
+    free((void*)msg);
+}
+
+void server_change_tab_content(const char* content, unsigned int tab_idx){
+    if (server == NULL)
+        return;
+    
+    const char* msg = serialize_tab_content(content, tab_idx);
+
+    for(unsigned int i = 0; i < server_connections_count; i++)
+        send_message(server_connections[i], msg);
+
     free((void*)msg);
 }

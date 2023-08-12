@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "tab-page.h"
 #include "server.h"
+#include "client.h"
 #include <stdio.h>
 
 /// function for `new_tab_page` and `new_client_page` to achieve similar functionality.
@@ -22,7 +23,8 @@ Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath)
     
     scroller = gtk_scrolled_window_new();
     rtrn.page = adw_tab_view_append(tab_view, scroller);
-    rtrn.buffer = editor_buffer_new(filePath, rtrn.page);
+    //unsigned int tab_idx = adw_tab_view_get_page_position(tab_view, rtrn.page);
+    rtrn.buffer = editor_buffer_new(filePath, rtrn.page, tab_view);
     text_view = gtk_text_view_new_with_buffer(GTK_TEXT_BUFFER(rtrn.buffer));
     set_tab_page_props(tab_view, GTK_TEXT_VIEW(text_view), GTK_SCROLLED_WINDOW(scroller), rtrn.page, title);
     
@@ -97,6 +99,7 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
 
     const char* file_name;
     // file_name utilized for the close tab message dialog
+
     if(file != NULL)
         file_name = g_file_get_basename(file);
     else
@@ -149,6 +152,26 @@ gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* windo
     return GDK_EVENT_STOP;
 }
 
+static void client_buffer_changed(GtkTextBuffer* buffer, AdwTabView* tab_view){
+    GtkTextIter start, end;
+    gtk_text_buffer_get_start_iter(buffer, &start);
+    gtk_text_buffer_get_end_iter(buffer, &end);
+    const char* content = gtk_text_buffer_get_text(buffer, &start, &end, true);
+    AdwTabPage* page = adw_tab_view_get_selected_page(tab_view);
+    client_change_tab_content(content, adw_tab_view_get_page_position(tab_view, page));
+}
+
+GtkTextBuffer* client_page_get_buffer(AdwTabPage* page) {
+    if (page == NULL)
+        return NULL;
+    else
+        return gtk_text_view_get_buffer(GTK_TEXT_VIEW(
+            gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(
+                adw_tab_page_get_child(page)
+            ))
+        ));
+}
+
 ClientPage new_client_tab(AdwTabView* tab_view, const char* title) {
     ClientPage rtrn;
     GtkScrolledWindow* scroller = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new());
@@ -157,6 +180,8 @@ ClientPage new_client_tab(AdwTabView* tab_view, const char* title) {
     rtrn.page = adw_tab_view_append(tab_view, GTK_WIDGET(scroller));
     rtrn.buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
     set_tab_page_props(tab_view, text_view, scroller, rtrn.page, title);
-    
+
+    g_signal_connect(rtrn.buffer, "changed", G_CALLBACK(client_buffer_changed), tab_view);
+
 	return rtrn;
 }

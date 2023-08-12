@@ -15,6 +15,7 @@ static const char* RENAME_TABS_KEY = "rename-tabs";
 static const char* DEL_CONTENT_KEY = "delete-content";
 static const char* REPLACE_CONTENT_KEY = "replace-content";
 static const char* INSERT_CONTENT_KEY = "insert-content";
+static const char* TAB_CONTENT_KEY = "tab-content";
 
 const char* read_channel(GIOChannel* channel, bool* closed) {
     const char* msg = NULL;
@@ -203,3 +204,21 @@ const char* serialize_remove_tab(unsigned int tab_idx){
     return rtrn;
 }
 
+// TODO: This function may be deprecated if a better solution is found to changing
+// content on both server and client side.
+const char* serialize_tab_content(const char* content, unsigned int tab_idx){
+    json_object* obj = json_object_new_object();
+    json_object* inner_json = json_object_new_object();
+    const char* rtrn = NULL;
+
+    json_object_object_add(inner_json, "content", json_object_new_string(content));
+    json_object_object_add(inner_json, "tab-idx", json_object_new_uint64(tab_idx));
+
+    json_object_object_add(obj, TAB_CONTENT_KEY, inner_json);
+    rtrn = strdup(json_object_to_json_string(obj));
+
+    //json_object_put(inner_json);
+    json_object_put(obj);
+
+    return rtrn;
+}

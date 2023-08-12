@@ -13,6 +13,7 @@ typedef struct {
 /// Append a new Tab Page to **tab_view** with a scorller and a textview using the `EditorBuffer`.
 Page new_tab_page(AdwTabView* tab_view, const char* title, const char* filePath);
 
+EditorBuffer* page_get_buffer(AdwTabPage* page); 
 Page get_active_page(AdwTabView* tab_view);
 Page get_nth_page(AdwTabView* tab_view, size_t i);
 
@@ -24,6 +25,7 @@ typedef struct {
     GtkTextBuffer* buffer;
 } ClientPage;
 
+GtkTextBuffer* client_page_get_buffer(AdwTabPage* page);
 /// Like `new_tab_page`, but uses a normal `GtkTextBuffer`.
 ClientPage new_client_tab(AdwTabView* tab_view, const char* title);
 

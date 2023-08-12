@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "tab-page.h"
 #include "gui.h"
+#include "server.h"
 #include <string.h>
 
 struct _EditorBuffer {
@@ -45,7 +46,8 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
     // free(file_path_param_spec);
 }
 
-static void editor_buffer_changed(EditorBuffer* buffer) {
+static void editor_buffer_changed(EditorBuffer* buffer, AdwTabView* tab_view) {
+    server_change_tab_content(editor_buffer_get_content(buffer), adw_tab_view_get_page_position(tab_view, buffer->tab_page));
     if (!buffer->edited) {
         adw_tab_page_set_indicator_icon(buffer->tab_page, g_themed_icon_new("media-record-symbolic"));
         buffer->edited = true;
@@ -57,7 +59,7 @@ static void editor_buffer_init(EditorBuffer* self) {
     self->file_path = NULL;
 }
 
-EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page) {
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, AdwTabView* tab_view) {
     if (file_path != NULL)
         file_path = strdup(file_path);
     
@@ -65,7 +67,7 @@ EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page) {
     buffer->edited = false;
     buffer->file_path = file_path;
     buffer->tab_page = tab_page;
-    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), NULL);
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), tab_view);
     return buffer;
 }
 

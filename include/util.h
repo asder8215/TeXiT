@@ -145,5 +145,9 @@ const char* serialize_replace_content(ReplaceContent delete_content);
 /// Caller takes ownership of return value and must free it.
 const char* serialize_insert_content(InsertContent delete_content);
 
+/// Serializes the whole content of a specific tab page by idx
+/// Caller takes ownership of return value and must free it.
+const char* serialize_tab_content(const char* content, unsigned int tab_idx);
+
 
 #endif // __UTIL_H__
