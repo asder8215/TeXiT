@@ -17,7 +17,7 @@ typedef struct {
     GtkWindow* window;
 } ClientParams;
 
-ClientParams* client_params;
+ClientParams* client_params = NULL;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, ClientParams* client_params) {
     bool closed = false;
@@ -115,7 +115,8 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
     gtk_label_set_text(label, "Waiting for host to create or open a new file.");
 
     g_signal_connect(tab_view, "close-page", G_CALLBACK(client_close_tab_page), NULL);
-
+    
+    client_params = malloc(sizeof(ClientParams));
     client_params->tab_view = tab_view;
     client_params->file_buttons = file_buttons;
     client_params->label = label;
@@ -139,6 +140,7 @@ void stop_client(AdwTabView* tab_view, FileButtons* file_buttons, GtkLabel* labe
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_new), true);
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_open), true);
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_save), true);
+        free(client_params);
         client_params = NULL;
         g_object_unref(connection);
         connection = NULL;
