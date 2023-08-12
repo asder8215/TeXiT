@@ -14,10 +14,10 @@ void stop_server();
 
 /// Send message to clients to append a new tab and its contents.
 /// The new tab is always the last tab of **tab_view**.
-void server_new_tab(AdwTabView* tab_view);
+void server_new_tab();
 
 /// Send message to clients to remove a specific tab page.
-void server_remove_tab(AdwTabView* tab_view, AdwTabPage* tab_page);
+void server_remove_tab(AdwTabPage* tab_page);
 
 /// Send content of a tab page to clients.
 void server_change_tab_content(TabContent tab_content);
