@@ -149,10 +149,10 @@ array_list* deserialize_add_tabs(json_object* list) {
         add_tab->tab_idx = json_object_get_uint64(tmp_obj);
         
         json_get_or_fail_list(string, "title", add_tab_obj, add_tab);
-        add_tab->title = json_object_get_string(tmp_obj);
+        add_tab->title = strdup(json_object_get_string(tmp_obj));
 
         json_get_or_fail_list(string, "content", add_tab_obj, add_tab);
-        add_tab->content = json_object_get_string(tmp_obj);
+        add_tab->content = strdup(json_object_get_string(tmp_obj));
 
         array_list_add(rtrn, add_tab);
     }
@@ -170,7 +170,7 @@ TabContent* deserialize_tab_content(json_object* obj) {
     json_get_or_fail(int, "tab-idx", obj);
     rtrn->tab_idx = json_object_get_uint64(tmp_obj);
     json_get_or_fail(string, "content", obj);
-    rtrn->content = json_object_get_string(tmp_obj);
+    rtrn->content = strdup(json_object_get_string(tmp_obj));
 
     return rtrn;
 }

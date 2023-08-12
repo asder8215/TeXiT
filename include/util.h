@@ -62,7 +62,7 @@ void rename_tab_free(RenameTab self);
 typedef struct {
     TabIdx tab_idx;
     size_t start_byte;
-    size_t byte_length; 
+    size_t byte_length;
 } DeleteContent;
 
 /// Is basically a combination of DeleteContent and InsertContent;

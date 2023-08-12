@@ -9,7 +9,6 @@
 
 GSocketClient* client = NULL;
 GSocketConnection* connection = NULL;
-bool change_from_client = true;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, AdwTabView* tab_view) {
     bool closed = false;
@@ -48,7 +47,6 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
     else if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
         TabContent* tab_content = deserialize_tab_content(tmp);
         ClientPage page = get_nth_client_tab(tab_view, tab_content->tab_idx);
-        change_from_client = false;
         gtk_text_buffer_set_text(page.buffer, tab_content->content, -1);
     }
 
@@ -117,8 +115,6 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view,
 void stop_client() {
     if (client != NULL) {
         printf("Stopping client.\n");
-        // GOutputStream* ostream = g_io_stream_get_output_stream(G_IO_STREAM(connection));
-        // g_output_stream_write(ostream, "Client left", 11, NULL, NULL);
         g_object_unref(connection);
         connection = NULL;
         g_object_unref(client);
@@ -127,12 +123,7 @@ void stop_client() {
 }
 
 void client_change_tab_content(TabContent tab_content){
-    if(change_from_client){
-        const char* msg = serialize_tab_content(tab_content);
-        send_message(connection, msg);
-        free((void*)msg);
-    }
-    else{
-        change_from_client = true;
-    }
+    const char* msg = serialize_tab_content(tab_content);
+    send_message(connection, msg);
+    free((void*)msg);
 }
