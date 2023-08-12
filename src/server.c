@@ -11,11 +11,7 @@ GSocketService* server = NULL;
 // TODO: store channels inteaddd of connections???
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
-
-typedef struct {
-    GSocketConnection* connection;
-    AdwTabView* tab_view;
-} MessageReadParams;
+AdwTabView* tab_view = NULL;
 
 static void remove_connection(GSocketConnection* connection) {
     unsigned int i;
@@ -42,13 +38,12 @@ static void remove_connection(GSocketConnection* connection) {
     g_object_unref(connection);
 }
 
-static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, MessageReadParams* params) {
+static gboolean server_message_read(GIOChannel* channel, GIOCondition condition, GSocketConnection* connection) {
     bool closed = false;
     const char* msg = read_channel(channel, &closed);
     
     if (closed) {
-        remove_connection(params->connection);
-        free(params);
+        remove_connection(connection);
         return FALSE;
     }
     // Server getting NULL msg and connection not closed has never happened.
@@ -64,14 +59,14 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
     // Interpret the message
     if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
         TabContent* tab_content = deserialize_tab_content(tmp);
-        Page page = get_nth_page(params->tab_view, tab_content->tab_idx);
+        Page page = get_nth_page(tab_view, tab_content->tab_idx);
         // Set the content of the TextBuffer
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(page.buffer), tab_content->content, -1);
         // Send the change to all other clients
         for (unsigned int i = 0; i < server_connections_count; i++) {
-            GSocketConnection* connection = server_connections[i];
-            if (connection != params->connection)
-                send_message(server_connections[i], msg);
+            GSocketConnection* c = server_connections[i];
+            if (c != connection)
+                send_message(c, msg);
         }
 
         tab_content_free(*tab_content);
@@ -84,7 +79,7 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 /// Handler for when the server gets a new connection request.
-static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, AdwTabView* tab_view) {
+static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, gpointer unused) {
     if (server_connections_count == MAX_CONNECTIONS) {
         fprintf(stderr, "Attempted new connection, but Reached maximum number of connections (%d)\n", MAX_CONNECTIONS);
         return GDK_EVENT_PROPAGATE;
@@ -98,11 +93,7 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
     GSocket* socket = g_socket_connection_get_socket(connection);
     // TODO: channels needs to be freed when connection closed
     GIOChannel* channel = g_io_channel_unix_new(g_socket_get_fd(socket));
-    
-    MessageReadParams* params = malloc(sizeof(MessageReadParams));
-    params->connection = connection;
-    params->tab_view = tab_view;
-    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, params);
+    g_io_add_watch(channel, G_IO_IN, (GIOFunc)server_message_read, connection);
 
     // Send currently opened tabs
     const char* msg = serialize_add_tabs_from_view(tab_view);
@@ -113,7 +104,7 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port, AdwTabView* tab_view) {
+StartStatus start_server(int port, AdwTabView* view) {
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (server != NULL)
@@ -130,8 +121,9 @@ StartStatus start_server(int port, AdwTabView* tab_view) {
         }
         return Other;
     };
+    tab_view = view;
 
-    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), tab_view);
+    g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), NULL);
     g_socket_service_start(server);
     
     return Success;
@@ -149,16 +141,19 @@ void stop_server() {
         }
         server_connections_count = 0;
         server = NULL;
+        // TabView should not be freed, that's done when the window closes
+        tab_view = NULL;
     }
 }
 
-void server_new_tab(AdwTabView* tab_view) {
+void server_new_tab() {
     // Function can be called before server has started.
     if (server == NULL)
         return;
 
     Page page;
     AddTab* new_tab = malloc(sizeof(AddTab));
+    // The new tab is always the last one
     new_tab->tab_idx = adw_tab_view_get_n_pages(tab_view) - 1;
 
     page = get_nth_page(tab_view, new_tab->tab_idx);
@@ -172,7 +167,7 @@ void server_new_tab(AdwTabView* tab_view) {
     free((void*)msg);
 }
 
-void server_remove_tab(AdwTabView* tab_view, AdwTabPage* target_page){
+void server_remove_tab(AdwTabPage* target_page){
     if (server == NULL)
         return;
     
