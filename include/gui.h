@@ -4,6 +4,10 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 
+static const char* TOGGLE_LABEL_OFF = "❌ Share";
+static const char* TOGGLE_LABEL_HOSTING = "✔️ Hosting";
+static const char* TOGGLE_LABEL_CONNECTED = "✔️ Connected";
+
 typedef GtkWidget* Widget;
 
 typedef struct {

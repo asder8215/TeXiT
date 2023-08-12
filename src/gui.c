@@ -7,9 +7,6 @@
 #include <string.h>
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-static const char* SERVER_TOGGLE_OFF_TITLE = "❌ Share";
-static const char* SERVER_TOGGLE_HOSTING_TITLE = "✔️ Hosting";
-static const char* SERVER_TOGGLE_CONNECTED_TITLE = "✔️ Connected";
 static const char* SHARE_RESPONSE_CANCEL = "cancel";
 static const char* SHARE_RESPONSE_HOST = "host";
 static const char* SHARE_RESPONSE_CONNECT = "connect";
@@ -53,10 +50,10 @@ static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params
         gtk_window_present(GTK_WINDOW(dialog));
     } else {
         if (connection_state == Server)
+            /// TODO: does not turn off toggle when connected to client (at least when on the same machine)
             stop_server();
         else if (connection_state == Client)
             stop_client();
-        gtk_button_set_label(GTK_BUTTON(toggle), SERVER_TOGGLE_OFF_TITLE);
         connection_state = Off;
     }
 }
@@ -70,11 +67,9 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
         int port = atoi(gtk_editable_get_text(params->entries.host_port));
 
         printf("Starting host with port %d...\n", port);
-        switch (start_server(port, params->tab_view)) {
+        switch (start_server(port, params->tab_view, params->toggle)) {
             case Success:
                 printf("Host started successfully.\n");
-                gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_HOSTING_TITLE);
-                gtk_toggle_button_set_active(params->toggle, true);
                 connection_state = Server;
                 break;
             case AlreadyStarted:
@@ -96,11 +91,9 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 
         printf("Connect to ip address %s with port %d\n", ip, port); 
         
-        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->label, params->window)) {
+        switch (start_client(ip, port, params->tab_view, params->file_buttons, params->toggle, params->label, params->window)) {
             case Success:
                 printf("Client started successfully.\n");
-                gtk_button_set_label(GTK_BUTTON(params->toggle), SERVER_TOGGLE_CONNECTED_TITLE);
-                gtk_toggle_button_set_active(params->toggle, true);
                 connection_state = Client;
                 break;
             case AlreadyStarted:
@@ -219,7 +212,7 @@ void main_window(AdwApplication *app) {
     share_click_params->file_buttons = file_buttons;
 
     GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
-    gtk_button_set_label(GTK_BUTTON(share_toggle), SERVER_TOGGLE_OFF_TITLE);
+    gtk_button_set_label(GTK_BUTTON(share_toggle), TOGGLE_LABEL_OFF);
     g_signal_connect(share_toggle, "clicked", G_CALLBACK(share_toggle_click), share_click_params);
 
     gtk_window_present(GTK_WINDOW(window));

@@ -14,6 +14,7 @@ AdwTabView* client_tab_view = NULL;
 FileButtons* file_buttons = NULL;
 GtkLabel* label = NULL;
 GtkWindow* window = NULL;
+GtkToggleButton* client_toggle = NULL;
 
 static gboolean client_message_read(GIOChannel* channel, GIOCondition condition, gpointer _) {
     bool closed = false;
@@ -65,7 +66,7 @@ static gboolean client_close_tab_page(AdwTabView* tab_view, AdwTabPage* page, gp
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_client(const char* ip_address, int port, AdwTabView* p_tab_view, FileButtons* p_file_buttons, GtkLabel* p_label, GtkWindow* p_window){
+StartStatus start_client(const char* ip_address, int port, AdwTabView* p_tab_view, FileButtons* p_file_buttons, GtkToggleButton* p_toggle, GtkLabel* p_label, GtkWindow* p_window){
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (client != NULL)
@@ -98,6 +99,7 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* p_tab_vie
     file_buttons = p_file_buttons;
     label = p_label;
     window = p_window;
+    client_toggle = p_toggle;
 
     // The client should attempt to close all tabs and hide file-buttons before connecting
 
@@ -105,15 +107,18 @@ StartStatus start_client(const char* ip_address, int port, AdwTabView* p_tab_vie
     gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_new), false);
     gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_open), false);
     gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_save), false);
-    // Disconnect the signal handler to the tabs in order to close them all
-    // no matter if they had unsaved changes
+    // Disconnect the signal handler to the tabs in order to close them all no matter if they had unsaved changes
     signal_disconnect(client_tab_view, close_tab_page);
 
     // Close all tabs the user previously had open
     while (adw_tab_view_get_n_pages(client_tab_view))
         adw_tab_view_close_page(client_tab_view, adw_tab_view_get_nth_page(client_tab_view, 0));
     gtk_widget_set_visible(GTK_WIDGET(client_tab_view), false);
+    /// Set text of window label
     gtk_label_set_text(label, "Waiting for host to create or open a new file.");
+    // Set the state of the toggle button to CONNECTED
+    gtk_button_set_label(GTK_BUTTON(client_toggle), TOGGLE_LABEL_CONNECTED);
+    gtk_toggle_button_set_active(client_toggle, true);
 
     g_signal_connect(client_tab_view, "close-page", G_CALLBACK(client_close_tab_page), NULL);
 
@@ -136,6 +141,9 @@ void stop_client() {
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_new), true);
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_open), true);
         gtk_widget_set_visible(GTK_WIDGET(file_buttons->file_save), true);
+        // Set the state of the toggle button to OFF
+        gtk_button_set_label(GTK_BUTTON(client_toggle), TOGGLE_LABEL_OFF);
+        gtk_toggle_button_set_active(client_toggle, false);
 
         g_object_unref(connection);
         connection = NULL;
@@ -145,6 +153,7 @@ void stop_client() {
         file_buttons = NULL;
         label = NULL;
         window = NULL;
+        client_toggle = NULL;
     }
 }
 

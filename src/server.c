@@ -12,6 +12,7 @@ GSocketService* server = NULL;
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
 AdwTabView* tab_view = NULL;
+GtkToggleButton* server_toggle = NULL;
 
 static void remove_connection(GSocketConnection* connection) {
     unsigned int i;
@@ -104,7 +105,7 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port, AdwTabView* view) {
+StartStatus start_server(int port, AdwTabView* p_tab_view, GtkToggleButton* p_toggle) {
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (server != NULL)
@@ -121,7 +122,12 @@ StartStatus start_server(int port, AdwTabView* view) {
         }
         return Other;
     };
-    tab_view = view;
+    tab_view = p_tab_view;
+    server_toggle = p_toggle;
+
+    // Set the state of the toggle button to HOSTING
+    gtk_button_set_label(GTK_BUTTON(server_toggle), TOGGLE_LABEL_HOSTING);
+    gtk_toggle_button_set_active(server_toggle, true);
 
     g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), NULL);
     g_socket_service_start(server);
@@ -132,6 +138,11 @@ StartStatus start_server(int port, AdwTabView* view) {
 void stop_server() {
     if (server != NULL) {
         printf("Stopping server.\n");
+
+        // Set the state of the toggle button to OFF
+        gtk_button_set_label(GTK_BUTTON(server_toggle), TOGGLE_LABEL_OFF);
+        gtk_toggle_button_set_active(server_toggle, false);
+
         g_socket_service_stop(server);
         g_socket_listener_close(G_SOCKET_LISTENER(server));
         g_object_unref(server);
@@ -141,8 +152,9 @@ void stop_server() {
         }
         server_connections_count = 0;
         server = NULL;
-        // TabView should not be freed, that's done when the window closes
+        // These should not be freed, that's done when the window closes
         tab_view = NULL;
+        server_toggle = NULL;
     }
 }
 
