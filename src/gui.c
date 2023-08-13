@@ -5,7 +5,6 @@
 #include "client.h"
 #include <stdio.h>
 #include <string.h>
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 static const char* SHARE_RESPONSE_CANCEL = "cancel";
 static const char* SHARE_RESPONSE_HOST = "host";
@@ -120,9 +119,9 @@ static void new_file_click(GtkButton* button, FileClickParams* params) {
     server_new_tab();
 }
 
-static void open_file_response(GtkNativeDialog* dialog, int response, FileClickParams* params) {
-    if (response == GTK_RESPONSE_ACCEPT) {
-        GFile* file = gtk_file_chooser_get_file(GTK_FILE_CHOOSER(dialog));
+static void open_file_response(GtkFileDialog* dialog, GAsyncResult* result, FileClickParams* params) {
+    GFile* file = gtk_file_dialog_open_finish(dialog, result, NULL);
+    if (file != NULL) {
         const char* filePath = g_file_get_path(file);
         EditorBuffer* buffer = new_tab_page(params->tab_view, g_file_get_basename(file), filePath).buffer;
 
@@ -153,13 +152,10 @@ static void open_file_response(GtkNativeDialog* dialog, int response, FileClickP
 /// *params* is malloc-ed by `main_window()` (which essentially acts like `main()`) so it is allocated only once.
 /// That same ptr should be freed only when the program terminates.
 static void open_file_click(GtkButton* button, FileClickParams* params) {
-    GtkFileChooserNative* file_chooser = gtk_file_chooser_native_new("Open File",
-        params->window, GTK_FILE_CHOOSER_ACTION_OPEN, "Open", "Cancel"
-    );
-    gtk_native_dialog_set_modal(GTK_NATIVE_DIALOG(file_chooser), true);
-    gtk_native_dialog_set_transient_for(GTK_NATIVE_DIALOG(file_chooser), params->window);
-    g_signal_connect(file_chooser, "response", G_CALLBACK(open_file_response), params);
-    gtk_native_dialog_show(GTK_NATIVE_DIALOG(file_chooser));
+    GtkFileDialog* dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_modal(dialog, true);
+    gtk_file_dialog_set_title(dialog, "Open File");
+    gtk_file_dialog_open(dialog, params->window, NULL, (GAsyncReadyCallback)(open_file_response), params);
 }
 
 static void save_file_click(GtkButton* button, FileClickParams* params) {
@@ -186,29 +182,27 @@ void main_window(AdwApplication *app) {
 
     AdwApplicationWindow* window = ADW_APPLICATION_WINDOW(gtk_builder_get_object(builder, "main-window"));
     gtk_window_set_application(GTK_WINDOW(window), GTK_APPLICATION(app));
-    // TODO: when connected to signal "destroy", does not call handler???
     g_signal_connect(GTK_WIDGET(window), "close-request", G_CALLBACK(main_window_destroy), malloced);
 
     file_click_params->window = GTK_WINDOW(window);
     file_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
     file_click_params->tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
-    file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
     file_click_params->toast_overlay = ADW_TOAST_OVERLAY(gtk_builder_get_object(builder, "toast-overlay"));
+    file_click_params->tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
+    g_signal_connect(file_click_params->tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
+
+    file_buttons->file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
+    file_buttons->file_open = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
+    file_buttons->file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
+    g_signal_connect(file_buttons->file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
+    g_signal_connect(file_buttons->file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
+    g_signal_connect(file_buttons->file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
 
     share_click_params->window = file_click_params->window;
+    share_click_params->label = file_click_params->label;
+    share_click_params->tabbar = file_click_params->tabbar;
     share_click_params->toast_overlay = file_click_params->toast_overlay;
     share_click_params->tab_view = file_click_params->tab_view; 
-    share_click_params->label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
-    share_click_params->tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
-    
-    g_signal_connect(file_click_params->tab_view, "close-page", G_CALLBACK(close_tab_page), GTK_WINDOW(window));
-    file_buttons->file_new = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
-    g_signal_connect(file_buttons->file_new, "clicked", G_CALLBACK(new_file_click), file_click_params);
-    file_buttons->file_open = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
-    g_signal_connect(file_buttons->file_open, "clicked", G_CALLBACK(open_file_click), file_click_params);
-    file_buttons->file_save = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
-    g_signal_connect(file_buttons->file_save, "clicked", G_CALLBACK(save_file_click), file_click_params);
-    
     share_click_params->file_buttons = file_buttons;
 
     GtkToggleButton* share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
