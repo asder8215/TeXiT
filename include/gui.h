@@ -3,7 +3,10 @@
 
 #include <gtk/gtk.h>
 #include <adwaita.h>
-#include "buffer.h"
+
+static const char* TOGGLE_LABEL_OFF = "❌ Share";
+static const char* TOGGLE_LABEL_HOSTING = "✔️ Hosting";
+static const char* TOGGLE_LABEL_CONNECTED = "✔️ Connected";
 
 typedef GtkWidget* Widget;
 
@@ -14,7 +17,28 @@ typedef struct {
 } ShareDialogEntries;
 
 typedef struct {
-    GtkButton* toggle;
+    GtkButton* file_new;
+    GtkButton* file_save;
+    GtkButton* file_open;
+} FileButtons;
+
+typedef struct {
+    GtkWindow* window;
+    FileButtons* file_buttons;
+    GtkLabel* label;
+    AdwTabBar* tabbar;
+    AdwToastOverlay* toast_overlay;
+    AdwTabView* tab_view;
+} ShareClickParams;
+
+typedef struct {
+    GtkWindow* window;
+    FileButtons* file_buttons;
+    GtkLabel* label;
+    AdwTabBar* tabbar;
+    GtkToggleButton* toggle;
+    AdwToastOverlay* toast_overlay;
+    AdwTabView* tab_view;
     ShareDialogEntries entries;
 } ShareEnableParams;
 
@@ -35,14 +59,16 @@ typedef struct {
 /// Things that were heap-allocated in `main_window()` and must be freed when program terminates.
 typedef struct {
     FileClickParams* file_click_params;
+    ShareClickParams* share_click_params;
+    FileButtons* file_buttons;
 } MainMalloced;
 
-static void share_toggle_click(GtkToggleButton* toggle, GtkWindow* window);
+static void share_toggle_click(GtkToggleButton* toggle, ShareClickParams* params);
 /// *params* is malloc-ed by `share_toggle_click()`, which is a callback, so *params* must be freed by this function.
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareEnableParams* params);
 
 void main_window(AdwApplication *app);
-void main_window_destroy(AdwApplicationWindow* window, MainMalloced* params);
+gboolean main_window_destroy(AdwApplicationWindow* window, MainMalloced* params);
 
 /// Sets up signal callbacks for the entries of the dialog in the *builder*.
 /// Returns pointers to entries that will hold relevant values for hosting/connecting.

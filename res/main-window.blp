@@ -37,7 +37,9 @@ Adw.ApplicationWindow main-window {
             width-request: 400;
             height-request: 200;
             valign: center;
-            visible: true;
+            visible: bind-property tab-view.visible inverted bidirectional;
+            //visible: true;
+            
         }
 
         Adw.TabBar tab-bar{ 
@@ -51,17 +53,10 @@ Adw.ApplicationWindow main-window {
                 vexpand: true;
                 width-request: 400;
                 height-request: 200;
-                visible: bind-property label.visible inverted bidirectional;
+                visible: false;
                 default-icon: Gio.ThemedIcon { name: "text-x-generic-symbolic"; };
                 // Will have scrollers with TextViews
             }
-        }
-
-        ActionBar {
-            vexpand: false;
-
-            [start]
-            Label { label: "Share: Not connected"; }
         }
     }
 }

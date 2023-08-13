@@ -20,7 +20,7 @@ Adw.MessageDialog dialog {
 
         Adw.PreferencesGroup {
             title: "Host";
-            description: "Create a Share session for others to connect to";
+            description: "Create a Share session for others to connect to.\nPort must be between 1024 and 49151 (inclusive)";
         
             Adw.EntryRow host-port { title: "Port"; }
         }
@@ -28,7 +28,7 @@ Adw.MessageDialog dialog {
 
         Adw.PreferencesGroup {
             title: "Connect";
-            description: "Connect to someone else's Share session";
+            description: "Connect to someone else's Share session.\n\n⚠️WARNING: All unsaved changes will be lost.";
         
             Adw.EntryRow connect-ip { title: "IP Address"; }
             Adw.EntryRow connect-port { title: "Port"; }
