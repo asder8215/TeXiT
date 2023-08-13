@@ -149,6 +149,7 @@ static void new_file_save_response(GtkFileDialog* dialog, GAsyncResult* result, 
         adw_tab_page_set_title(params->buffer->tab_page, g_file_get_basename(file));
         // Set Buffer file_path
         params->buffer->file_path = g_file_get_path(file);
+        params->buffer->edited = false;
         // Remove unsaved indicator
         adw_tab_page_set_indicator_icon(params->buffer->tab_page, NULL);
         
@@ -183,7 +184,8 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
 
     // Using an exisitng file, overwrite it.
     GFile* file = g_file_new_for_path(self->file_path);
+    write_file(file, GTK_TEXT_BUFFER(self));
+    self->edited = false;
     // Remove unsaved indicator
     adw_tab_page_set_indicator_icon(self->tab_page, NULL);
-    write_file(file, GTK_TEXT_BUFFER(self));
 }
