@@ -134,7 +134,7 @@ typedef struct {
     bool close_tab;
 } SaveResponseParams;
 
-static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveResponseParams* params) {
+static void new_file_save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveResponseParams* params) {
     GFile* file = gtk_file_dialog_save_finish(dialog, result, NULL);
     
     if (file == NULL) {
@@ -149,6 +149,7 @@ static void save_response(GtkFileDialog* dialog, GAsyncResult* result, SaveRespo
         adw_tab_page_set_title(params->buffer->tab_page, g_file_get_basename(file));
         // Set Buffer file_path
         params->buffer->file_path = g_file_get_path(file);
+        params->buffer->edited = false;
         // Remove unsaved indicator
         adw_tab_page_set_indicator_icon(params->buffer->tab_page, NULL);
         
@@ -177,11 +178,14 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
         params->tab_view = tab_view;
         params->buffer = self;
         params->close_tab = close_tab;
-        gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(save_response), params);
+        gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(new_file_save_response), params);
         return;
     }
 
     // Using an exisitng file, overwrite it.
     GFile* file = g_file_new_for_path(self->file_path);
-    write_file(file, &self->parent);
+    write_file(file, GTK_TEXT_BUFFER(self));
+    self->edited = false;
+    // Remove unsaved indicator
+    adw_tab_page_set_indicator_icon(self->tab_page, NULL);
 }
