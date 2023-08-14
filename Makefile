@@ -3,7 +3,7 @@ CC = gcc
 BUILD_DIR = ./build/
 SRC_DIR = ./src/
 RES_DIR = ./res/
-RES_FILE = ./.gresource.xml
+RES_FILE = $(BUILD_DIR)/.gresources.xml
 BLPS = $(wildcard $(RES_DIR)/*.blp)
 GUIS = $(addprefix $(BUILD_DIR)/, $(patsubst %.blp, %.ui, $(BLPS)))
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
@@ -31,12 +31,19 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(BUILD_DIR)/$(RES_DIR)
 $(BUILD_DIR)/resources.o: $(BUILD_DIR)/resources.c $(BUILD_DIR)/$(RES_DIR)
 	$(CC) $(INCLUDE) $(CFLAGS) $(LFLAGS) -c -o $@ $<
 
-# Adapted from https://stackoverflow.com/questions/28855850/gtk-c-and-gtkbuilder-to-make-a-single-executable
-resources = $(shell glib-compile-resources --sourcedir=$(RES_DIR) --generate-dependencies $(RES_FILE))
-rest_res = $(shell echo $(resources) | tr ' ' '\n' | grep -v .ui | xargs)
-$(BUILD_DIR)/resources.c: $(RES_FILE) $(GUIS) $(rest_res) $(BUILD_DIR)/$(RES_DIR)
-	cp $(rest_res) -t $(BUILD_DIR)/$(RES_DIR) &&\
+# Any other resource file that is not compiled into something else
+rest_res = $(shell ls -1 $(RES_DIR) | grep -v .blp | xargs)
+$(BUILD_DIR)/resources.c: $(RES_FILE) $(GUIS) $(BUILD_DIR)/$(RES_DIR)
+	cp $(addprefix $(RES_DIR)/, $(rest_res)) -t $(BUILD_DIR)/$(RES_DIR) &&\
 	glib-compile-resources $(RES_FILE) --target="$@" --sourcedir=$(BUILD_DIR)/$(RES_DIR) --generate-source
+
+$(RES_FILE): $(BUILD_DIR)
+	touch $@ &&\
+	echo '<?xml version="1.0" encoding="UTF-8"?><gresources><gresource prefix="/me/Asder8215/TeXiT">' > $@;\
+	for file in $(GUIS) $(rest_res); do\
+		echo "<file>$$(basename $$file)</file>" >> $@;\
+	done;\
+	echo "</gresource></gresources>" >> $@
 
 $(BUILD_DIR)/$(RES_DIR)/%.ui: $(RES_DIR)/%.blp $(BUILD_DIR)/$(RES_DIR)
 	blueprint-compiler compile $< --output $@
