@@ -4,10 +4,8 @@ This is a simple text editor built in C, utilizing GTK4, Libadwaita, and Bluepri
 
 # Demo of App
 
-<video>
-  <source type="video/mp4" src="./readme_imgs/texit-demo.mp4"></source>
-  <p>Your browser does not support the video element.</p>
-</video>
+<img src="./readme_imgs/texit-demo.gif"/>
+or watch <a href="./readme_imgs/texit-demo.mp4">the video</a>.
 
 So far our app contains:
 - Open and Save files.
