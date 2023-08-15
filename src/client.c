@@ -49,6 +49,8 @@ static gboolean client_message_read(GIOChannel* channel, GIOCondition condition,
         AdwTabPage* page = adw_tab_view_get_nth_page(client_tab_view, tab_idx);
         adw_tab_view_close_page(client_tab_view, page);
         adw_tab_view_close_page_finish(client_tab_view, page, true);
+        if (adw_tab_view_get_n_pages(client_tab_view) == 0)
+            gtk_widget_set_visible(GTK_WIDGET(client_tab_view), false);
     }
     else if(json_object_object_get_ex(jobj, "tab-content", &tmp)){
         TabContent* tab_content = deserialize_tab_content(tmp);
