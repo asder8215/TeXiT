@@ -27,6 +27,13 @@ typedef struct {
     GtkEditable* connect_port;
 } ShareDialogEntries;
 
+// Signal callbacks for "res/main-window.blp".
+void share_toggle_click(GtkToggleButton* toggle, gpointer _);
+void new_file_click(GtkButton* button, gpointer _);
+void open_file_click(GtkButton* button, gpointer _);
+void save_file_click(GtkButton* button, gpointer _);
+gboolean main_window_destroy(AdwApplicationWindow* window, gpointer _);
+
 void main_window(AdwApplication *app);
 
 /// Sets up signal callbacks for the entries of the dialog in the *builder*.

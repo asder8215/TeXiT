@@ -3,6 +3,7 @@ using Gio 2.0;
 using Adw 1;
 
 Adw.ApplicationWindow main-window {
+    close-request => $main_window_destroy();
     Box {
         orientation: vertical;
 
@@ -15,20 +16,26 @@ Adw.ApplicationWindow main-window {
             Button file-new {
                 Image { icon-name: "document-new-symbolic"; }
                 tooltip-text: "New File";
+                clicked => $new_file_click();
             }
             [start]
             Button file-open {
                 Image { icon-name: "text-x-generic-symbolic"; }
                 tooltip-text: "Open File";
+                clicked => $open_file_click();
             }
             [start]
             Button file-save {
                 Image { icon-name: "document-save-symbolic"; }
                 tooltip-text: "Save File";
+                clicked => $save_file_click();
             }
             [end]
             // label set in program
-            ToggleButton share-toggle { label: "❌ Share";}
+            ToggleButton share-toggle {
+                label: "❌ Share";
+                clicked => $share_toggle_click();
+            }
         }
 
         Gtk.Label label{
@@ -39,7 +46,6 @@ Adw.ApplicationWindow main-window {
             valign: center;
             visible: bind-property tab-view.visible inverted bidirectional;
             //visible: true;
-            
         }
 
         Adw.TabBar tab-bar{ 
@@ -56,6 +62,7 @@ Adw.ApplicationWindow main-window {
                 visible: false;
                 default-icon: Gio.ThemedIcon { name: "text-x-generic-symbolic"; };
                 // Will have scrollers with TextViews
+                close-page => $close_tab_page();
             }
         }
     }

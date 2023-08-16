@@ -10,8 +10,8 @@ C_FILES = $(wildcard $(SRC_DIR)/*.c)
 OBJS = $(addprefix $(BUILD_DIR)/, $(patsubst $(SRC_DIR)/%.c, %.o, $(C_FILES))) $(BUILD_DIR)/resources.o
 LIBS = json-c # The names of directories that are subprojects (libraries)
 INCLUDE = -Iinclude
-CFLAGS = `pkg-config --cflags gtk4` `pkg-config --cflags libadwaita-1` $(addprefix -I$(BUILD_DIR)/include/, $(LIBS))
-LFLAGS = `pkg-config --libs gtk4` `pkg-config --libs libadwaita-1` -L$(BUILD_DIR)/lib64 $(addprefix -l, $(LIBS))
+CFLAGS = `pkg-config --cflags gtk4` `pkg-config --cflags libadwaita-1` "-Wl,--export-dynamic" $(addprefix -I$(BUILD_DIR)/include/, $(LIBS))
+LFLAGS = `pkg-config --libs gtk4` `pkg-config --libs libadwaita-1` `pkg-config --libs gmodule-export-2.0` -L$(BUILD_DIR)/lib64 $(addprefix -l, $(LIBS))
 
 
 all: $(NAME)

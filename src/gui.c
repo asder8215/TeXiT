@@ -23,13 +23,14 @@ GtkButton* file_new_btn;
 GtkButton* file_open_btn;
 GtkButton* file_save_btn;
 
+// Callbacks for when a dialog is finished showing.
 static void share_enable_response(AdwMessageDialog* dialog, const char* response, ShareDialogEntries* entries);
 static void open_file_response(GtkFileDialog* dialog, GAsyncResult* result, gpointer _);
-static gboolean main_window_destroy(AdwApplicationWindow* window, gpointer _);
 
 
 /// Handler for activating/deactivating the share feature. A GtkDialog will be crated on top of *window*.
-static void share_toggle_click(GtkToggleButton* toggle, gpointer _) {
+/// Called on "GtkButton::clicked" for `share_toggle`.
+void share_toggle_click(GtkToggleButton* toggle, gpointer _) {
     if (gtk_toggle_button_get_active(toggle)) {
         // Deactivate toggle button. `share_enable_response()` should activate the toggle button if setup was successful.
         gtk_toggle_button_set_active(toggle, false);
@@ -108,18 +109,19 @@ static void share_enable_response(AdwMessageDialog* dialog, const char* response
 }
 
 
-static void new_file_click(GtkButton* button, gpointer _) {
+/// Called on "GtkButton::clicked" for `file_new_btn`.
+void new_file_click(GtkButton* button, gpointer _) {
     new_tab_page(tab_view, "Untitled", NULL);
     server_new_tab();
 }
 
-static void open_file_click(GtkButton* button, gpointer _) {
+/// Called on "GtkButton::clicked" for `file_open_btn`.
+void open_file_click(GtkButton* button, gpointer _) {
     GtkFileDialog* dialog = gtk_file_dialog_new();
     gtk_file_dialog_set_modal(dialog, true);
     gtk_file_dialog_set_title(dialog, "Open File");
     gtk_file_dialog_open(dialog, window, NULL, (GAsyncReadyCallback)(open_file_response), NULL);
 }
-
 static void open_file_response(GtkFileDialog* dialog, GAsyncResult* result, gpointer _) {
     GFile* file = gtk_file_dialog_open_finish(dialog, result, NULL);
     if (file != NULL) {
@@ -151,7 +153,8 @@ static void open_file_response(GtkFileDialog* dialog, GAsyncResult* result, gpoi
     g_object_unref(dialog);
 }
 
-static void save_file_click(GtkButton* button, gpointer _) {
+/// Called on "GtkButton::clicked" for `file_save_btn`.
+void save_file_click(GtkButton* button, gpointer _) {
     // could be NULL if no tabs are open
     Page page = get_active_page(tab_view);
     if (page.page == NULL) {
@@ -167,29 +170,23 @@ void main_window(AdwApplication *app) {
     
     AdwApplicationWindow* app_window = ADW_APPLICATION_WINDOW(gtk_builder_get_object(builder, "main-window"));
     gtk_window_set_application(GTK_WINDOW(app_window), GTK_APPLICATION(app));
-    g_signal_connect(GTK_WIDGET(app_window), "close-request", G_CALLBACK(main_window_destroy), NULL);
 
     window = GTK_WINDOW(app_window);
     window_label = GTK_LABEL(gtk_builder_get_object(builder, "label"));
     tabbar = ADW_TAB_BAR(gtk_builder_get_object(builder, "tab-bar"));
     toast_overlay = ADW_TOAST_OVERLAY(gtk_builder_get_object(builder, "toast-overlay"));
     tab_view = ADW_TAB_VIEW(gtk_builder_get_object(builder, "tab-view"));
-    g_signal_connect(tab_view, "close-page", G_CALLBACK(close_tab_page), NULL);
-
+    share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     file_new_btn = GTK_BUTTON(gtk_builder_get_object(builder, "file-new"));
     file_open_btn = GTK_BUTTON(gtk_builder_get_object(builder, "file-open"));
     file_save_btn = GTK_BUTTON(gtk_builder_get_object(builder, "file-save"));
-    g_signal_connect(file_new_btn, "clicked", G_CALLBACK(new_file_click), NULL);
-    g_signal_connect(file_open_btn, "clicked", G_CALLBACK(open_file_click), NULL);
-    g_signal_connect(file_save_btn, "clicked", G_CALLBACK(save_file_click), NULL);
 
-    share_toggle = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "share-toggle"));
     gtk_button_set_label(GTK_BUTTON(share_toggle), TOGGLE_LABEL_OFF);
-    g_signal_connect(share_toggle, "clicked", G_CALLBACK(share_toggle_click), NULL);
 
     gtk_window_present(GTK_WINDOW(window));
 }
-static gboolean main_window_destroy(AdwApplicationWindow* window, gpointer _) {
+/// Called on "GtkWindow::close-request" for `window`.
+gboolean main_window_destroy(AdwApplicationWindow* window, gpointer _) {
     if (server_running)
         stop_server();
     else if (client_running)
