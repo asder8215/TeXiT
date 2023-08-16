@@ -1,4 +1,4 @@
-*.o
 texit
-text_editor
-.cache
+.cache/
+build/
+compile_commands.json
