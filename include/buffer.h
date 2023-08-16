@@ -12,7 +12,7 @@ G_DECLARE_FINAL_TYPE(EditorBuffer, editor_buffer, EDITOR, BUFFER, GtkTextBuffer)
 
 /// *file_path* is copied by this function, so it is only borrowed. Can be NULL.
 /// *tab_page* is a reference (Can't be NULL) to the `AdwTabPage` to which this buffer is in.
-EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, AdwTabView* tab_view);
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page);
 
 const char* editor_buffer_get_file_path(EditorBuffer* self);
 
@@ -32,7 +32,7 @@ const char* editor_buffer_get_content(EditorBuffer* self);
 /// Sets the title of *self->tab_page* to the name of the file that was saved, or closes it if *close_tab* is true.
 /// **close_tab** is `true` if this function is called from a `AdwTabView::close-page` callback,
 /// The FilePicker dialog is set trainsient for *parent_window*, which could be NULL.
-void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* parent_window, bool close_tab);
+void editor_buffer_save(EditorBuffer* self, bool close_tab);
 
 G_END_DECLS
 

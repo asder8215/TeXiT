@@ -17,7 +17,7 @@ EditorBuffer* page_get_buffer(AdwTabPage* page);
 Page get_active_page(AdwTabView* tab_view);
 Page get_nth_page(AdwTabView* tab_view, size_t i);
 
-gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page, GtkWindow* window);
+gboolean close_tab_page(AdwTabView* tab_view, AdwTabPage* page);
 
 /// Like `Page`, but specifically for the client mode since it shouldn't use the functionality of `EditorBuffer`.
 typedef struct {

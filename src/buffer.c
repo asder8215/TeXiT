@@ -48,14 +48,14 @@ static void editor_buffer_class_init(EditorBufferClass* class) {
 
 /// Callback called whenever something changes in the TextBuffer,
 /// regardless of it was made by a Client or by the User.
-static void editor_buffer_changed(EditorBuffer* buffer, AdwTabView* tab_view) {
+static void editor_buffer_changed(EditorBuffer* buffer, gpointer _) {
     if (!buffer->edited) {
         adw_tab_page_set_indicator_icon(buffer->tab_page, g_themed_icon_new("media-record-symbolic"));
         buffer->edited = true;
     }
 }
 /// When the user types something, the change must be sent to all of its clients.
-static void user_typed(EditorBuffer* buffer, AdwTabView* tab_view) {
+static void user_typed(EditorBuffer* buffer, gpointer _) {
     TabContent tab_content;
     tab_content.tab_idx = adw_tab_view_get_page_position(tab_view, buffer->tab_page);
     tab_content.content = editor_buffer_get_content(buffer);
@@ -68,7 +68,7 @@ static void editor_buffer_init(EditorBuffer* self) {
     self->file_path = NULL;
 }
 
-EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, AdwTabView* tab_view) {
+EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page) {
     if (file_path != NULL)
         file_path = strdup(file_path);
     
@@ -76,8 +76,8 @@ EditorBuffer* editor_buffer_new(const char* file_path, AdwTabPage* tab_page, Adw
     buffer->edited = false;
     buffer->file_path = file_path;
     buffer->tab_page = tab_page;
-    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), tab_view);
-    g_signal_connect(GTK_TEXT_BUFFER(buffer), "end-user-action", G_CALLBACK(user_typed), tab_view);
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "changed", G_CALLBACK(editor_buffer_changed), NULL);
+    g_signal_connect(GTK_TEXT_BUFFER(buffer), "end-user-action", G_CALLBACK(user_typed), NULL);
     return buffer;
 }
 
@@ -129,7 +129,6 @@ static void write_file(GFile* file, GtkTextBuffer* buffer) {
 }
 
 typedef struct {
-    AdwTabView* tab_view;
     EditorBuffer* buffer;
     bool close_tab;
 } SaveResponseParams;
@@ -141,7 +140,7 @@ static void new_file_save_response(GtkFileDialog* dialog, GAsyncResult* result, 
         // User cancelled FileDialog
         // Do not close tab
         if (params->close_tab)
-            adw_tab_view_close_page_finish(params->tab_view, params->buffer->tab_page, false);
+            adw_tab_view_close_page_finish(tab_view, params->buffer->tab_page, false);
     } else {
         // File was saved
         write_file(file, GTK_TEXT_BUFFER(params->buffer));
@@ -155,16 +154,16 @@ static void new_file_save_response(GtkFileDialog* dialog, GAsyncResult* result, 
         
         // Close tab
         if (params->close_tab)
-            adw_tab_view_close_page_finish(params->tab_view, params->buffer->tab_page, true);
-        if (adw_tab_view_get_n_pages(params->tab_view) == 0)
-            gtk_widget_set_visible(GTK_WIDGET(params->tab_view), false);
+            adw_tab_view_close_page_finish(tab_view, params->buffer->tab_page, true);
+        if (adw_tab_view_get_n_pages(tab_view) == 0)
+            gtk_widget_set_visible(GTK_WIDGET(tab_view), false);
     }
 
     g_object_unref(dialog);
     free(params);
 }
 
-void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* parent_window, bool close_tab) {
+void editor_buffer_save(EditorBuffer* self, bool close_tab) {
     if (self->file_path == NULL) {
         // We're in a completely new file, ask user where to save.
         GtkFileDialog* dialog = gtk_file_dialog_new();
@@ -175,10 +174,9 @@ void editor_buffer_save(EditorBuffer* self, AdwTabView* tab_view, GtkWindow* par
 
         // Freed in `save_response()`
         SaveResponseParams* params = malloc(sizeof(SaveResponseParams));
-        params->tab_view = tab_view;
         params->buffer = self;
         params->close_tab = close_tab;
-        gtk_file_dialog_save(dialog, parent_window, NULL, (GAsyncReadyCallback)(new_file_save_response), params);
+        gtk_file_dialog_save(dialog, window, NULL, (GAsyncReadyCallback)(new_file_save_response), params);
         return;
     }
 

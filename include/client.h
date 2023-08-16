@@ -3,7 +3,9 @@
 
 #include "util.h"
 
-StartStatus start_client(const char* ip_address, int port, AdwTabView* tab_view, FileButtons* file_buttons, GtkToggleButton* toggle, GtkLabel* label, GtkWindow* window);
+extern bool client_running;
+
+StartStatus start_client(const char* ip_address, int port);
 
 void stop_client();
 

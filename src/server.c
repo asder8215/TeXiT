@@ -8,11 +8,10 @@
 #include <string.h>
 
 GSocketService* server = NULL;
+bool server_running = false;
 // TODO: store channels inteaddd of connections???
 GSocketConnection* server_connections[MAX_CONNECTIONS];
 unsigned int server_connections_count = 0;
-AdwTabView* tab_view = NULL;
-GtkToggleButton* server_toggle = NULL;
 
 static void remove_connection(GSocketConnection* connection) {
     unsigned int i;
@@ -80,7 +79,7 @@ static gboolean server_message_read(GIOChannel* channel, GIOCondition condition,
 }
 
 /// Handler for when the server gets a new connection request.
-static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, gpointer unused) {
+static gboolean server_new_incoming(GSocketService* server, GSocketConnection* connection, GObject* _, gpointer __) {
     if (server_connections_count == MAX_CONNECTIONS) {
         fprintf(stderr, "Attempted new connection, but Reached maximum number of connections (%d)\n", MAX_CONNECTIONS);
         return GDK_EVENT_PROPAGATE;
@@ -105,7 +104,7 @@ static gboolean server_new_incoming(GSocketService* server, GSocketConnection* c
 }
 
 // adapted mostly from drakide's stackoverflow post: https://stackoverflow.com/questions/9513327/gio-socket-server-client-example
-StartStatus start_server(int port, AdwTabView* p_tab_view, GtkToggleButton* p_toggle) {
+StartStatus start_server(int port) {
     if (port < PORT_MIN || port > PORT_MAX)
         return InvalidPort;
     if (server != NULL)
@@ -122,12 +121,11 @@ StartStatus start_server(int port, AdwTabView* p_tab_view, GtkToggleButton* p_to
         }
         return Other;
     };
-    tab_view = p_tab_view;
-    server_toggle = p_toggle;
+    server_running = true;
 
     // Set the state of the toggle button to HOSTING
-    gtk_button_set_label(GTK_BUTTON(server_toggle), TOGGLE_LABEL_HOSTING);
-    gtk_toggle_button_set_active(server_toggle, true);
+    gtk_button_set_label(GTK_BUTTON(share_toggle), TOGGLE_LABEL_HOSTING);
+    gtk_toggle_button_set_active(share_toggle, true);
 
     g_signal_connect(server, "incoming", G_CALLBACK(server_new_incoming), NULL);
     g_socket_service_start(server);
@@ -140,8 +138,8 @@ void stop_server() {
         printf("Stopping server.\n");
 
         // Set the state of the toggle button to OFF
-        gtk_button_set_label(GTK_BUTTON(server_toggle), TOGGLE_LABEL_OFF);
-        gtk_toggle_button_set_active(server_toggle, false);
+        gtk_button_set_label(GTK_BUTTON(share_toggle), TOGGLE_LABEL_OFF);
+        gtk_toggle_button_set_active(share_toggle, false);
 
         g_socket_service_stop(server);
         g_socket_listener_close(G_SOCKET_LISTENER(server));
@@ -152,9 +150,7 @@ void stop_server() {
         }
         server_connections_count = 0;
         server = NULL;
-        // These should not be freed, that's done when the window closes
-        tab_view = NULL;
-        server_toggle = NULL;
+        server_running = false;
     }
 }
 
